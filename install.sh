@@ -13,9 +13,9 @@ set -euo pipefail
 #   - Systembenutzer 'tasks', Verzeichnisse, Secret Key
 #   - Initiale DB-Migrationen
 #
-# Aufruf:  sudo ./install-kapture.sh
-#          sudo ./install-kapture.sh --skip-ollama
-#          sudo ./install-kapture.sh --with-frontend-dev
+# Aufruf:  sudo ./install.sh
+#          sudo ./install.sh --skip-ollama
+#          sudo ./install.sh --with-frontend-dev
 #
 # Voraussetzung: Root-Rechte (sudo), Debian 13, ca. 5 GB freier Speicher.
 # ──────────────────────────────────────────────────────────────────────
@@ -480,9 +480,9 @@ hdr "14. Backup-Cronjob (täglich 03:00)"
 # Backup-Skript in $APP_DIR/deploy/ ablegen
 mkdir -p "$APP_DIR/deploy"
 cp -f "$BACKEND_DIR/deploy/backup.sh" "$APP_DIR/deploy/"
-cp -f "$BACKEND_DIR/deploy/restore-kapture.sh" "$APP_DIR/deploy/"
-chmod 755 "$APP_DIR/deploy/backup.sh" "$APP_DIR/deploy/restore-kapture.sh"
-chown "$SERVICE_USER":"$SERVICE_GROUP" "$APP_DIR/deploy/backup.sh" "$APP_DIR/deploy/restore-kapture.sh"
+cp -f "$BACKEND_DIR/deploy/restore.sh" "$APP_DIR/deploy/"
+chmod 755 "$APP_DIR/deploy/backup.sh" "$APP_DIR/deploy/restore.sh"
+chown "$SERVICE_USER":"$SERVICE_GROUP" "$APP_DIR/deploy/backup.sh" "$APP_DIR/deploy/restore.sh"
 
 # Cron-Eintrag nur anlegen, wenn noch nicht vorhanden
 CRON_LINE="0 3 * * * $APP_DIR/deploy/backup.sh >> /var/log/tasks-backup.log 2>&1"
@@ -548,6 +548,6 @@ MyTasks läuft jetzt.
   Neustart:       systemctl restart tasks-api tasks-worker
   Stoppen:        systemctl stop tasks-api tasks-worker
 
-  Update:         cd $PROJECT_ROOT && sudo ./update-kapture.sh
+  Update:         cd $PROJECT_ROOT && sudo ./update.sh
 
 EOF

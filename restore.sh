@@ -7,9 +7,9 @@ set -euo pipefail
 # Stellt die SQLite-Datenbank aus einem VACUUM INTO-Backup wieder her.
 # Der tasks-api/tasks-worker werden vorher gestoppt und danach gestartet.
 #
-# Aufruf:  sudo ./restore-kapture.sh <backup-datei.db>
-#          sudo ./restore-kapture.sh /var/lib/tasks/backups/daily/tasks-20260809.db
-#          sudo ./restore-kapture.sh --list
+# Aufruf:  sudo ./restore.sh <backup-datei.db>
+#          sudo ./restore.sh /var/lib/tasks/backups/daily/tasks-20260809.db
+#          sudo ./restore.sh --list
 # ──────────────────────────────────────────────────────────────────────
 
 APP_DIR="/opt/tasks"

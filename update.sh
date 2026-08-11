@@ -6,9 +6,9 @@ set -euo pipefail
 # Aktualisiert Backend-Code, baut Frontend neu, führt Migrationen aus,
 # startet Dienste neu. Konfiguration und Datenbank bleiben unberührt.
 #
-# Aufruf:  sudo ./update-kapture.sh
-#          sudo ./update-kapture.sh --skip-frontend
-#          sudo ./update-kapture.sh --skip-migrations
+# Aufruf:  sudo ./update.sh
+#          sudo ./update.sh --skip-frontend
+#          sudo ./update.sh --skip-migrations
 # ──────────────────────────────────────────────────────────────────────
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
