@@ -1,0 +1,27 @@
+[Unit]
+Description=Kapture API Server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=exec
+User=tasks
+Group=tasks
+WorkingDirectory=/opt/tasks
+ExecStart=/opt/tasks/venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 5000 --proxy-headers
+Restart=on-failure
+RestartSec=5
+
+EnvironmentFile=/etc/tasks/tasks.env
+
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+ReadWritePaths=/opt/tasks /var/lib/tasks
+ReadOnlyPaths=/etc/tasks
+
+LimitNOFILE=8192
+
+[Install]
+WantedBy=multi-user.target

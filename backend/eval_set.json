@@ -1,0 +1,442 @@
+[
+  {
+    "source_text": "Angebot Fa. Müller bis Freitag 16 Uhr fertigstellen, vorher noch Rücksprache mit Sabine, ist wichtig",
+    "expected": {
+      "title": "Angebot Fa. Müller fertigstellen",
+      "status": "offen",
+      "priority": 2,
+      "subtasks": ["Rücksprache mit Sabine"],
+      "due_at": null,
+      "category": null
+    }
+  },
+  {
+    "source_text": "Kalkulation Projekt Nord prüfen bis morgen",
+    "expected": {
+      "title": "Kalkulation Projekt Nord prüfen",
+      "status": "offen",
+      "priority": 3,
+      "due_at": null
+    }
+  },
+  {
+    "source_text": "sofort Rückmeldung Fa. Schmitt einholen, warte schon 4 Tage",
+    "expected": {
+      "title": "Rückmeldung Fa. Schmitt einholen",
+      "status": "wartend",
+      "priority": 1,
+      "waiting_for": "Fa. Schmitt"
+    }
+  },
+  {
+    "source_text": "Reisekosten Q3 einreichen",
+    "expected": {
+      "title": "Reisekosten Q3 einreichen",
+      "status": "offen",
+      "priority": 3
+    }
+  },
+  {
+    "source_text": "Präsentation für Montag vorbereiten, Folien erstellen, Daten aktualisieren, mit Team abstimmen",
+    "expected": {
+      "title": "Präsentation vorbereiten",
+      "status": "offen",
+      "priority": 3,
+      "subtasks": ["Folien erstellen", "Daten aktualisieren", "Mit Team abstimmen"],
+      "due_at": null
+    }
+  },
+  {
+    "source_text": "jeden Montag Statusbericht schreiben",
+    "expected": {
+      "title": "Statusbericht schreiben",
+      "status": "offen",
+      "priority": 3,
+      "recurrence_rule": null,
+      "due_at": null
+    }
+  },
+  {
+    "source_text": "Rechnung 2024-081 von Meier GmbH prüfen und freigeben, bis Mittwoch",
+    "expected": {
+      "title": "Rechnung 2024-081 von Meier GmbH prüfen und freigeben",
+      "status": "offen",
+      "priority": 3,
+      "due_at": null
+    }
+  },
+  {
+    "source_text": "Server-Zertifikat läuft nächste Woche Donnerstag ab - erneuern, kritisch!",
+    "expected": {
+      "title": "Server-Zertifikat erneuern",
+      "status": "offen",
+      "priority": 1,
+      "due_at": null
+    }
+  },
+  {
+    "source_text": "Bewerbungsgespräch mit Kandidat Schmidt am 15. August um 10 Uhr",
+    "expected": {
+      "title": "Bewerbungsgespräch mit Kandidat Schmidt",
+      "status": "offen",
+      "priority": 3,
+      "due_at": null
+    }
+  },
+  {
+    "source_text": "Steuerunterlagen für 2025 sortieren und an Steuerberater schicken, hat Zeit bis Ende des Monats",
+    "expected": {
+      "title": "Steuerunterlagen für 2025 sortieren und an Steuerberater schicken",
+      "status": "offen",
+      "priority": 4,
+      "due_at": null
+    }
+  },
+  {
+    "source_text": "Mitarbeitergespräch Müller vorbereiten: Ziele Q3 prüfen, Feedback von Kollegen einholen, Gehaltsband recherchieren",
+    "expected": {
+      "title": "Mitarbeitergespräch Müller vorbereiten",
+      "status": "offen",
+      "priority": 3,
+      "subtasks": ["Ziele Q3 prüfen", "Feedback von Kollegen einholen", "Gehaltsband recherchieren"]
+    }
+  },
+  {
+    "source_text": "Ölwechsel Auto, dringend, Werkstatt anrufen",
+    "expected": {
+      "title": "Ölwechsel Auto",
+      "status": "offen",
+      "priority": 1,
+      "subtasks": ["Werkstatt anrufen"]
+    }
+  },
+  {
+    "source_text": "Blogartikel über neue API-Features schreiben, Veröffentlichung am Freitag",
+    "expected": {
+      "title": "Blogartikel über neue API-Features schreiben",
+      "status": "offen",
+      "priority": 3,
+      "due_at": null
+    }
+  },
+  {
+    "source_text": "Lieferant Meier warte auf Angebot seit einer Woche",
+    "expected": {
+      "title": "Auf Angebot von Lieferant Meier warten",
+      "status": "wartend",
+      "priority": 3,
+      "waiting_for": "Lieferant Meier"
+    }
+  },
+  {
+    "source_text": "Wohnung putzen am Samstag",
+    "expected": {
+      "title": "Wohnung putzen",
+      "status": "offen",
+      "priority": 4,
+      "due_at": null
+    }
+  },
+  {
+    "source_text": "Vertrag mit Kunde XYZ finalisieren, muss bis Ende der Woche raus, höchste Priorität",
+    "expected": {
+      "title": "Vertrag mit Kunde XYZ finalisieren",
+      "status": "offen",
+      "priority": 1,
+      "due_at": null
+    }
+  },
+  {
+    "source_text": "Geburtstagsgeschenk für Lisa besorgen, bis Dienstag",
+    "expected": {
+      "title": "Geburtstagsgeschenk für Lisa besorgen",
+      "status": "offen",
+      "priority": 3,
+      "due_at": null
+    }
+  },
+  {
+    "source_text": "Datenbank-Backup prüfen, läuft das automatisch? Nachsehen im Monitoring",
+    "expected": {
+      "title": "Datenbank-Backup prüfen",
+      "status": "offen",
+      "priority": 3,
+      "subtasks": ["Monitoring nachsehen"]
+    }
+  },
+  {
+    "source_text": "Firmenlauf am 1. September anmelden, Startgeld überweisen, Team-T-Shirts bestellen",
+    "expected": {
+      "title": "Firmenlauf anmelden",
+      "status": "offen",
+      "priority": 3,
+      "subtasks": ["Startgeld überweisen", "Team-T-Shirts bestellen"]
+    }
+  },
+  {
+    "source_text": "wichtiges Telefonat mit Rechtsanwalt Dr. Weber morgen 9:30",
+    "expected": {
+      "title": "Telefonat mit Rechtsanwalt Dr. Weber",
+      "status": "offen",
+      "priority": 2,
+      "due_at": null
+    }
+  },
+  {
+    "source_text": "E-Mail an alle Mitarbeiter: Neue Parkregelung ab 1. Oktober",
+    "expected": {
+      "title": "E-Mail an alle Mitarbeiter: Neue Parkregelung",
+      "status": "offen",
+      "priority": 4
+    }
+  },
+  {
+    "source_text": "defekten Drucker im 2. Stock reparieren lassen, bei IT melden",
+    "expected": {
+      "title": "Defekten Drucker im 2. Stock reparieren lassen",
+      "status": "offen",
+      "priority": 3,
+      "subtasks": ["Bei IT melden"]
+    }
+  },
+  {
+    "source_text": "Jahresabschluss 2025 vorbereiten, Unterlagen von Buchhaltung anfordern, Bilanz prüfen, GuV erstellen",
+    "expected": {
+      "title": "Jahresabschluss 2025 vorbereiten",
+      "status": "offen",
+      "priority": 3,
+      "subtasks": ["Unterlagen von Buchhaltung anfordern", "Bilanz prüfen", "GuV erstellen"]
+    }
+  },
+  {
+    "source_text": "Termin mit Zulieferer für nächste Woche finden, Doodle-Umfrage starten",
+    "expected": {
+      "title": "Termin mit Zulieferer finden",
+      "status": "offen",
+      "priority": 3,
+      "subtasks": ["Doodle-Umfrage starten"]
+    }
+  },
+  {
+    "source_text": "Meeting-Notizen vom 5.8. ins Wiki stellen, Teilnehmerliste ergänzen, Action Items markieren",
+    "expected": {
+      "title": "Meeting-Notizen vom 5.8. ins Wiki stellen",
+      "status": "offen",
+      "priority": 3,
+      "subtasks": ["Teilnehmerliste ergänzen", "Action Items markieren"]
+    }
+  },
+  {
+    "source_text": "Sicherheitsupdate auf allen Servern einspielen, am Wochenende, vorher Backup machen",
+    "expected": {
+      "title": "Sicherheitsupdate auf allen Servern einspielen",
+      "status": "offen",
+      "priority": 2,
+      "subtasks": ["Backup machen"]
+    }
+  },
+  {
+    "source_text": "Projektangebot für Ausschreibung 2026-07 schreiben, Referenzen zusammenstellen, Preiskalkulation machen, bis 20.8.",
+    "expected": {
+      "title": "Projektangebot für Ausschreibung 2026-07 schreiben",
+      "status": "offen",
+      "priority": 2,
+      "due_at": null,
+      "subtasks": ["Referenzen zusammenstellen", "Preiskalkulation machen"]
+    }
+  },
+  {
+    "source_text": "Büropflanzen gießen",
+    "expected": {
+      "title": "Büropflanzen gießen",
+      "status": "offen",
+      "priority": 4
+    }
+  },
+  {
+    "source_text": "Urlaubsantrag für September ausfüllen und an Vorgesetzten schicken",
+    "expected": {
+      "title": "Urlaubsantrag für September ausfüllen und an Vorgesetzten schicken",
+      "status": "offen",
+      "priority": 3
+    }
+  },
+  {
+    "source_text": "Rücksprache mit Architekt wegen Bauantrag, Unterlagen sind noch nicht da, warte auf Stadt",
+    "expected": {
+      "title": "Rücksprache mit Architekt wegen Bauantrag",
+      "status": "wartend",
+      "priority": 3,
+      "waiting_for": "Stadt"
+    }
+  },
+  {
+    "source_text": "Kundendaten für DSGVO-Auskunft exportieren, Frist läuft morgen ab, sehr dringend",
+    "expected": {
+      "title": "Kundendaten für DSGVO-Auskunft exportieren",
+      "status": "offen",
+      "priority": 1
+    }
+  },
+  {
+    "source_text": "neue Visitenkarten drucken lassen, bei Gelegenheit",
+    "expected": {
+      "title": "Neue Visitenkarten drucken lassen",
+      "status": "offen",
+      "priority": 4
+    }
+  },
+  {
+    "source_text": "Entwickler-Meeting jeden zweiten Dienstag um 14 Uhr vorbereiten",
+    "expected": {
+      "title": "Entwickler-Meeting vorbereiten",
+      "status": "offen",
+      "priority": 3,
+      "recurrence_rule": null
+    }
+  },
+  {
+    "source_text": "Lieferantenvertrag mit Händler AG prüfen, Frist 31.12., Anwalt einschalten",
+    "expected": {
+      "title": "Lieferantenvertrag mit Händler AG prüfen",
+      "status": "offen",
+      "priority": 2,
+      "subtasks": ["Anwalt einschalten"]
+    }
+  },
+  {
+    "source_text": "Social Media Posts für nächste Woche planen: LinkedIn, Twitter, Instagram je 2 Posts",
+    "expected": {
+      "title": "Social Media Posts für nächste Woche planen",
+      "status": "offen",
+      "priority": 4
+    }
+  },
+  {
+    "source_text": "Heizung warten lassen, vor dem Winter, Handwerker kontaktieren",
+    "expected": {
+      "title": "Heizung warten lassen",
+      "status": "offen",
+      "priority": 3,
+      "subtasks": ["Handwerker kontaktieren"]
+    }
+  },
+  {
+    "source_text": "Alte Firmenwagen-Versicherung kündigen und neue abschließen, bis Ende September",
+    "expected": {
+      "title": "Alte Firmenwagen-Versicherung kündigen und neue abschließen",
+      "status": "offen",
+      "priority": 3
+    }
+  },
+  {
+    "source_text": "Feedback zu neuem UI-Design geben, bis Freitag 12 Uhr",
+    "expected": {
+      "title": "Feedback zu neuem UI-Design geben",
+      "status": "offen",
+      "priority": 3
+    }
+  },
+  {
+    "source_text": "Messeplanung für Hannover: Stand buchen, Flyer drucken, Give-aways bestellen, Hotels für Team, vor Februar",
+    "expected": {
+      "title": "Messeplanung für Hannover",
+      "status": "offen",
+      "priority": 4,
+      "subtasks": ["Stand buchen", "Flyer drucken", "Give-aways bestellen", "Hotels für Team"]
+    }
+  },
+  {
+    "source_text": "HR: neuen Mitarbeiter Onboarding vorbereiten, Laptop bestellen, Accounts anlegen, Zugangskarte",
+    "expected": {
+      "title": "Neuen Mitarbeiter Onboarding vorbereiten",
+      "status": "offen",
+      "priority": 3,
+      "subtasks": ["Laptop bestellen", "Accounts anlegen", "Zugangskarte"]
+    }
+  },
+  {
+    "source_text": "Abgelaufene Zertifikate auf dem Testserver erneuern",
+    "expected": {
+      "title": "Abgelaufene Zertifikate auf dem Testserver erneuern",
+      "status": "offen",
+      "priority": 2
+    }
+  },
+  {
+    "source_text": "monatliche Gehaltsabrechnung kontrollieren und freigeben",
+    "expected": {
+      "title": "Monatliche Gehaltsabrechnung kontrollieren und freigeben",
+      "status": "offen",
+      "priority": 2
+    }
+  },
+  {
+    "source_text": "Fitness-Studio Mitgliedschaft kündigen, 3 Monate Frist",
+    "expected": {
+      "title": "Fitness-Studio Mitgliedschaft kündigen",
+      "status": "offen",
+      "priority": 4
+    }
+  },
+  {
+    "source_text": "wichtiger Kunde Mustermann GmbH braucht Angebot für Folgeprojekt, bis übermorgen 17 Uhr",
+    "expected": {
+      "title": "Angebot für Folgeprojekt Mustermann GmbH erstellen",
+      "status": "offen",
+      "priority": 2
+    }
+  },
+  {
+    "source_text": "Betriebsversammlung organisieren: Raum buchen, Catering, Agenda mit BR abstimmen",
+    "expected": {
+      "title": "Betriebsversammlung organisieren",
+      "status": "offen",
+      "priority": 3,
+      "subtasks": ["Raum buchen", "Catering", "Agenda mit BR abstimmen"]
+    }
+  },
+  {
+    "source_text": "Code-Review für Feature XYZ machen, wartet schon 2 Tage",
+    "expected": {
+      "title": "Code-Review für Feature XYZ machen",
+      "status": "offen",
+      "priority": 3
+    }
+  },
+  {
+    "source_text": "Papier für Drucker nachbestellen, ist fast leer",
+    "expected": {
+      "title": "Papier für Drucker nachbestellen",
+      "status": "offen",
+      "priority": 4
+    }
+  },
+  {
+    "source_text": "Sommerfest planen: Datum finden, Location anfragen, Budget klären, Einladung schreiben",
+    "expected": {
+      "title": "Sommerfest planen",
+      "status": "offen",
+      "priority": 4,
+      "subtasks": ["Datum finden", "Location anfragen", "Budget klären", "Einladung schreiben"]
+    }
+  },
+  {
+    "source_text": "Zahlungseingang von Kunde Nord prüfen, Mahnung vorbereiten falls nicht bezahlt",
+    "expected": {
+      "title": "Zahlungseingang von Kunde Nord prüfen",
+      "status": "offen",
+      "priority": 2,
+      "subtasks": ["Mahnung vorbereiten falls nicht bezahlt"]
+    }
+  },
+  {
+    "source_text": "Hardware-Inventur machen, alle Arbeitsplätze durchgehen, Liste aktualisieren",
+    "expected": {
+      "title": "Hardware-Inventur machen",
+      "status": "offen",
+      "priority": 4,
+      "subtasks": ["Alle Arbeitsplätze durchgehen", "Liste aktualisieren"]
+    }
+  }
+]

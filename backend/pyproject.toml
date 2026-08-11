@@ -1,0 +1,81 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["app"]
+include-package-data = false
+
+[project]
+name = "kapture"
+version = "0.1.0"
+description = "LLM-gestützte Task-Anwendung"
+requires-python = ">=3.13"
+license = { text = "MIT" }
+dependencies = [
+    "fastapi[standard]>=0.115,<1",
+    "uvicorn[standard]>=0.34,<1",
+    "sqlalchemy>=2.0,<3",
+    "aiosqlite>=0.21,<1",
+    "alembic>=1.15,<2",
+    "pydantic>=2.10,<3",
+    "pydantic-settings>=2.7,<3",
+    "argon2-cffi>=23,<24",
+    "pyjwt>=2,<3",
+    "httpx>=0.28,<1",
+    "jinja2>=3,<4",
+    "apscheduler>=3,<4",
+    "python-dateutil>=2,<3",
+    "cryptography>=44,<45",
+    "python-multipart>=0.0.20,<1",
+    "dateparser>=1.4,<2",
+    "sse-starlette>=3,<4",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8,<9",
+    "pytest-asyncio>=0.25,<1",
+    "httpx>=0.28,<1",
+    "ruff>=0.9,<1",
+    "pre-commit>=4,<5",
+]
+
+[tool.ruff]
+target-version = "py313"
+line-length = 100
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "F",   # pyflakes
+    "I",   # isort
+    "N",   # pep8-naming
+    "B",   # flake8-bugbear
+    "SIM", # flake8-simplify
+    "UP",  # pyupgrade
+    "C4",  # flake8-comprehensions
+    "RUF", # ruff-specific
+]
+ignore = [
+    "N818", # Exception name should end with Error
+    "B008", # Do not perform function calls in argument defaults
+    "SIM108", # Use ternary operator
+    "E501", # line too long (handled by formatter)
+]
+unfixable = []
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+
+[tool.ruff.lint.isort]
+force-single-line = false
+known-first-party = ["app"]
+
+[tool.pytest.ini_options]
+asyncio_default_fixture_loop_scope = "function"
+asyncio_mode = "auto"
+testpaths = ["tests"]
+pythonpath = ["."]

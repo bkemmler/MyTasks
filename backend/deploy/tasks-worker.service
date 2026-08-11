@@ -1,0 +1,25 @@
+[Unit]
+Description=Kapture Worker (LLM Jobs + Scheduler)
+After=network-online.target tasks-api.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=tasks
+Group=tasks
+WorkingDirectory=/opt/tasks
+ExecStart=/opt/tasks/venv/bin/python -m app.worker
+Restart=on-failure
+RestartSec=10
+
+EnvironmentFile=/etc/tasks/tasks.env
+
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+ReadWritePaths=/opt/tasks /var/lib/tasks
+ReadOnlyPaths=/etc/tasks
+
+[Install]
+WantedBy=multi-user.target

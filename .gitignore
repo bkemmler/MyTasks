@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+
+# Datenbank
+var/
+*.db
+*.db-wal
+*.db-shm
+
+# Node
+node_modules/
+frontend/tsconfig.tsbuildinfo
+
+# IDE
+.vscode/
+.idea/
+
+# Env
+.env
+/etc/tasks/
+
+# Eval-Results
+backend/eval-*.json
+backend/test_phase4_smoke.py
+
+# Build-Output (wird bei Installation neu gebaut)
+backend/static/assets/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Screenshots
+screenshot/
