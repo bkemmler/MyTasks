@@ -459,21 +459,22 @@ function DateTimeField({
   };
 
   const inputRef = useRef<HTMLInputElement>(null);
+  // Native datetime-local-Picker liefern erst einen vollständigen value,
+  // wenn Datum UND Zeit gefüllt sind. Teilwerte (nur Datum) fangen wir
+  // hier zwischen, damit "nur Datum gewählt" beim Speichern nicht verloren geht.
+  const pickedRef = useRef<string>("");
 
-  // Uncontrolled input: den defaultValue setzen wir beim Öffnen des Editors,
-  // lesen den aktuellen Wert beim Schließen direkt aus dem DOM.
-  // Kein useState/onChange — eliminiert jede Race-Condition mit dem
-  // nativen Date-Picker-Popup.
   useEffect(() => {
     if (editing && inputRef.current) {
       inputRef.current.value = isoToLocal(value);
+      pickedRef.current = "";
       inputRef.current.focus();
     }
   }, [editing, value]);
 
   function commit() {
-    const raw = inputRef.current?.value ?? "";
-    if (raw) {
+    const raw = inputRef.current?.value || pickedRef.current || "";
+    if (raw && /^\d{4}-\d{2}-\d{2}/.test(raw)) {
       onSave(localToIso(raw));
     } else {
       onSave(null);
@@ -490,6 +491,9 @@ function DateTimeField({
             type="datetime-local"
             className="input flex-1"
             defaultValue={isoToLocal(value)}
+            onChange={(e) => {
+              pickedRef.current = e.target.value;
+            }}
             onKeyDown={(e) => {
               if (e.key === "Enter") commit();
               if (e.key === "Escape") onCancel();

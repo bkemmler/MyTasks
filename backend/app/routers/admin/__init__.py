@@ -141,9 +141,15 @@ async def reset_password(
 async def test_smtp(
     to_address: str = Body(..., embed=True),
     admin: User = Depends(get_current_admin_user),
+    db: AsyncSession = Depends(get_db),
 ):
-    """Testet die SMTP-Konfiguration mit einer Email an die angegebene Adresse."""
+    """Testet die eigene Mail-Konfiguration mit einer Email an die angegebene Adresse."""
     from app.services.email import render_summary_html, render_summary_text, send_email
+    from app.services.user_mail import get_smtp_config
+
+    smtp = await get_smtp_config(db, admin)
+    if smtp is None:
+        return {"success": False, "to": to_address, "detail": "Keine Mail-Konfiguration hinterlegt"}
 
     fake_user = {
         "username": admin.username,
@@ -160,6 +166,7 @@ async def test_smtp(
         subject="[MyTasks] Test-Email",
         text_body=text,
         html_body=html,
+        smtp=smtp,
     )
     return {"success": ok, "to": to_address}
 

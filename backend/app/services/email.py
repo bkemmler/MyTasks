@@ -5,9 +5,10 @@ import logging
 import smtplib
 from email.message import EmailMessage
 from email.utils import formataddr
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from app.core.config import settings
+if TYPE_CHECKING:
+    from app.services.user_mail import SmtpConfig
 
 logger = logging.getLogger(__name__)
 
@@ -17,19 +18,20 @@ async def send_email(
     subject: str,
     text_body: str,
     html_body: str | None = None,
-    from_addr: str | None = None,
-    from_name: str | None = None,
+    smtp: SmtpConfig | None = None,
 ) -> bool:
-    """Versendet eine Email im multipart/alternative-Format (Text + HTML)."""
-    if not settings.smtp_host:
-        logger.warning("SMTP nicht konfiguriert, Email wird nicht versendet")
+    """Versendet eine Email im multipart/alternative-Format (Text + HTML).
+
+    Benötigt eine SMTP-Konfiguration (pro Nutzer). Ohne Konfiguration
+    oder bei unvollständiger Konfiguration wird nicht versendet.
+    """
+    if smtp is None or not smtp.is_complete():
+        logger.warning("Keine SMTP-Konfiguration vorhanden, Email wird nicht versendet")
         return False
 
     msg = EmailMessage()
     msg["Subject"] = subject
-    msg["From"] = formataddr(
-        (from_name or settings.smtp_from_name, from_addr or settings.smtp_from_address)
-    )
+    msg["From"] = formataddr((smtp.from_name or "", smtp.from_address))
     msg["To"] = to
 
     msg.set_content(text_body)
@@ -37,17 +39,17 @@ async def send_email(
         msg.add_alternative(html_body, subtype="html")
 
     def _send():
-        if settings.smtp_security == "ssl":
-            with smtplib.SMTP_SSL(settings.smtp_host, settings.smtp_port, timeout=30) as s:
-                if settings.smtp_username:
-                    s.login(settings.smtp_username, settings.smtp_password)
+        if smtp.security == "ssl":
+            with smtplib.SMTP_SSL(smtp.host, smtp.port, timeout=30) as s:
+                if smtp.username:
+                    s.login(smtp.username, smtp.password or "")
                 s.send_message(msg)
         else:
-            with smtplib.SMTP(settings.smtp_host, settings.smtp_port, timeout=30) as s:
-                if settings.smtp_security == "starttls":
+            with smtplib.SMTP(smtp.host, smtp.port, timeout=30) as s:
+                if smtp.security == "starttls":
                     s.starttls()
-                if settings.smtp_username:
-                    s.login(settings.smtp_username, settings.smtp_password)
+                if smtp.username:
+                    s.login(smtp.username, smtp.password or "")
                 s.send_message(msg)
         return True
 

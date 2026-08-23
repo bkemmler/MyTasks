@@ -3,7 +3,7 @@ from __future__ import annotations
 import hashlib
 import secrets
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Body, Depends, Request
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -14,13 +14,15 @@ from app.core.deps import (
     get_current_user,
     store_refresh_token,
 )
-from app.core.exceptions import UnauthorizedError
+from app.core.exceptions import NotFoundError, UnauthorizedError
 from app.core.security import create_access_token, hash_password, naive_utc_now, verify_password
 from app.models.user import RefreshToken as RefreshTokenModel
 from app.models.user import User
 from app.schemas.auth import (
     ChangePasswordRequest,
     LoginRequest,
+    MailConfigIn,
+    MailConfigOut,
     MePatchRequest,
     MeResponse,
     RefreshRequest,
@@ -158,3 +160,112 @@ async def change_password(
     current_user.updated_at = naive_utc_now()
     await db.commit()
     return {"detail": "Passwort geändert"}
+
+
+def _mail_config_out(cfg) -> MailConfigOut:
+    return MailConfigOut(
+        smtp_host=cfg.smtp_host,
+        smtp_port=cfg.smtp_port,
+        smtp_security=cfg.smtp_security,
+        smtp_username=cfg.smtp_username,
+        has_password=bool(cfg.smtp_password_encrypted),
+        from_address=cfg.from_address,
+        from_name=cfg.from_name,
+    )
+
+
+@router.get("/me/mail-config", response_model=MailConfigOut)
+async def get_mail_config(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Eigene Mail-Konfiguration lesen (Passwort wird nie zurückgegeben)."""
+    from app.services.user_mail import get_mail_config
+
+    cfg = await get_mail_config(db, current_user.id)
+    if not cfg:
+        raise NotFoundError("Keine Mail-Konfiguration hinterlegt")
+    return _mail_config_out(cfg)
+
+
+@router.put("/me/mail-config", response_model=MailConfigOut)
+async def put_mail_config(
+    body: MailConfigIn,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Eigene Mail-Konfiguration speichern. Leeres Passwort = bestehendes behalten."""
+    from app.models.mail import UserMailConfig
+    from app.services.user_mail import encrypt_password, get_mail_config
+
+    cfg = await get_mail_config(db, current_user.id)
+    if cfg is None:
+        cfg = UserMailConfig(user_id=current_user.id)
+        db.add(cfg)
+
+    cfg.smtp_host = body.smtp_host
+    cfg.smtp_port = body.smtp_port
+    cfg.smtp_security = body.smtp_security
+    cfg.smtp_username = body.smtp_username
+    cfg.from_address = body.from_address
+    cfg.from_name = body.from_name
+
+    if body.smtp_password:  # leer/None → bestehendes Passwort behalten
+        cfg.smtp_password_encrypted = encrypt_password(body.smtp_password)
+
+    await db.commit()
+    await audit(
+        db,
+        "mail.config.update",
+        user_id=current_user.id,
+        target=body.smtp_host,
+    )
+    return _mail_config_out(cfg)
+
+
+@router.delete("/me/mail-config", status_code=204)
+async def delete_mail_config(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Eigene Mail-Konfiguration löschen (deaktiviert den E-Mail-Versand)."""
+    from app.services.user_mail import get_mail_config
+
+    cfg = await get_mail_config(db, current_user.id)
+    if cfg:
+        await db.delete(cfg)
+        await db.commit()
+        await audit(db, "mail.config.delete", user_id=current_user.id)
+    return None
+
+
+@router.post("/me/mail-config/test")
+async def test_mail_config(
+    to_address: str | None = Body(None, embed=True),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Versendet eine Test-Email mit der eigenen Konfiguration."""
+    from app.services.email import render_summary_html, render_summary_text, send_email
+    from app.services.user_mail import get_smtp_config
+
+    smtp = await get_smtp_config(db, current_user)
+    if smtp is None:
+        return {"success": False, "detail": "Keine gültige Mail-Konfiguration hinterlegt"}
+
+    target = to_address or current_user.email or smtp.from_address
+    fake_user = {
+        "username": current_user.username,
+        "display_name": current_user.display_name,
+    }
+    fake_tasks = {
+        "heute": [{"title": "Das ist eine Test-Email von MyTasks", "priority": 3, "due_at": None}],
+    }
+    ok = await send_email(
+        to=target,
+        subject="[MyTasks] Test-Email",
+        text_body=render_summary_text(fake_user, fake_tasks),
+        html_body=render_summary_html(fake_user, fake_tasks),
+        smtp=smtp,
+    )
+    return {"success": ok, "to": target}

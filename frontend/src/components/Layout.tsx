@@ -107,6 +107,14 @@ export function Layout({ children }: { children: ReactNode }) {
             >
               Berichte
             </NavLink>
+            <NavLink
+              to="/settings"
+              className={({ isActive }) =>
+                `tab ${isActive ? "tab-active" : ""}`
+              }
+            >
+              Einstellungen
+            </NavLink>
             {user?.is_admin && (
               <NavLink
                 to="/admin"

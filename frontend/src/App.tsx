@@ -4,6 +4,7 @@ import { Login } from "./pages/Login";
 import { Tasks } from "./pages/Tasks";
 import { Categories } from "./pages/Categories";
 import { Reports } from "./pages/Reports";
+import { Settings } from "./pages/Settings";
 import { Admin } from "./pages/Admin";
 import { useAuth } from "./lib/auth";
 
@@ -35,6 +36,7 @@ export function App() {
         <Route path="/tasks/:view" element={<Tasks />} />
         <Route path="/categories" element={<Categories />} />
         <Route path="/reports" element={<Reports />} />
+        <Route path="/settings" element={<Settings />} />
         {user.is_admin && <Route path="/admin/*" element={<Admin />} />}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

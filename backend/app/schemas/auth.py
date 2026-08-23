@@ -53,3 +53,25 @@ class MePatchRequest(BaseModel):
 class ChangePasswordRequest(BaseModel):
     old_password: str
     new_password: str = Field(min_length=12)
+
+
+class MailConfigIn(BaseModel):
+    """Eigene Mail-Konfiguration. Passwort leer lassen = unverändert."""
+
+    smtp_host: str = Field(min_length=1, max_length=255)
+    smtp_port: int = Field(default=587, ge=1, le=65535)
+    smtp_security: str = Field(default="starttls", pattern="^(none|starttls|ssl)$")
+    smtp_username: str | None = Field(default=None, max_length=255)
+    smtp_password: str | None = Field(default=None, max_length=255)
+    from_address: str = Field(min_length=3, max_length=255)
+    from_name: str | None = Field(default=None, max_length=255)
+
+
+class MailConfigOut(BaseModel):
+    smtp_host: str
+    smtp_port: int
+    smtp_security: str
+    smtp_username: str | None = None
+    has_password: bool = False
+    from_address: str
+    from_name: str | None = None

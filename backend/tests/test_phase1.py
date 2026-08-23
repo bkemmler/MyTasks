@@ -250,6 +250,49 @@ class TestTasks:
         assert resp.json()["title"] == "Updated Title"
         assert resp.json()["priority"] == 1
 
+    async def test_clear_due_at_with_null(self, auth_client: AsyncClient):
+        """Explizites due_at: null muss das Datum löschen (nicht ignorieren)."""
+        create_resp = await auth_client.post(
+            "/api/v1/tasks",
+            json={"title": "Mit Datum", "due_at": "2026-08-15T10:00:00"},
+        )
+        uuid = create_resp.json()["uuid"]
+        assert create_resp.json()["due_at"] is not None
+
+        resp = await auth_client.patch(
+            f"/api/v1/tasks/{uuid}", json={"due_at": None}
+        )
+        assert resp.status_code == 200
+        assert resp.json()["due_at"] is None
+
+    async def test_date_only_due_at(self, auth_client: AsyncClient):
+        """Datum ohne Uhrzeit (Mitternacht) muss gespeichert werden."""
+        create_resp = await auth_client.post(
+            "/api/v1/tasks", json={"title": "Nur Datum"}
+        )
+        uuid = create_resp.json()["uuid"]
+
+        resp = await auth_client.patch(
+            f"/api/v1/tasks/{uuid}",
+            json={"due_at": "2026-08-15T00:00:00"},
+        )
+        assert resp.status_code == 200
+        assert resp.json()["due_at"] is not None
+        assert resp.json()["due_at"].startswith("2026-08-15T00:00")
+
+    async def test_clear_waiting_for(self, auth_client: AsyncClient):
+        create_resp = await auth_client.post(
+            "/api/v1/tasks",
+            json={"title": "Wartend", "status": "wartend", "waiting_for": "Sabine"},
+        )
+        uuid = create_resp.json()["uuid"]
+
+        resp = await auth_client.patch(
+            f"/api/v1/tasks/{uuid}", json={"waiting_for": None}
+        )
+        assert resp.status_code == 200
+        assert resp.json()["waiting_for"] is None
+
     async def test_complete_task(self, auth_client: AsyncClient):
         create_resp = await auth_client.post(
             "/api/v1/tasks", json={"title": "Complete Me"}

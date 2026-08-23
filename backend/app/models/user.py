@@ -11,6 +11,7 @@ from app.models._utils import utcnow
 
 if TYPE_CHECKING:
     from app.models.category import Category
+    from app.models.mail import UserMailConfig
     from app.models.task import Task
 
 
@@ -49,6 +50,9 @@ class User(Base):
         back_populates="user", cascade="all, delete-orphan"
     )
     tasks: Mapped[list[Task]] = relationship(back_populates="user", cascade="all, delete-orphan")
+    mail_config: Mapped[UserMailConfig | None] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
 
 
 class RefreshToken(Base):

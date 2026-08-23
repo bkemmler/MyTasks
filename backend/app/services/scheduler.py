@@ -127,8 +127,19 @@ async def _maybe_llm_einordnung(
 
 
 async def send_daily_summary_to_user(db: AsyncSession, user: User) -> bool:
-    """Baut die Zusammenfassung und versendet sie an einen Nutzer."""
+    """Baut die Zusammenfassung und versendet sie an einen Nutzer.
+
+    Versand nur mit eigener SMTP-Konfiguration des Nutzers —
+    ohne Konfiguration wird übersprungen (kein globaler Fallback).
+    """
     if not user.email or not user.daily_summary_enabled:
+        return False
+
+    from app.services.user_mail import get_smtp_config
+
+    smtp = await get_smtp_config(db, user)
+    if smtp is None:
+        logger.info("Keine Mail-Konfiguration für %s, Summary übersprungen", user.username)
         return False
 
     try:
@@ -146,4 +157,5 @@ async def send_daily_summary_to_user(db: AsyncSession, user: User) -> bool:
         subject=subject,
         text_body=text,
         html_body=html,
+        smtp=smtp,
     )

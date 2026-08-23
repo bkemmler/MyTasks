@@ -218,18 +218,25 @@ async def update_task(
 ):
     repo = _task_repo(db, current_user)
     task = await repo.get_by_uuid(uuid)
-    updates = body.model_dump(exclude_none=True)
+    # exclude_unset (nicht exclude_none): explizit gesendete null-Werte
+    # (z. B. due_at zum Löschen des Datums) müssen ankommen.
+    updates = body.model_dump(exclude_unset=True)
 
     # Wenn der Nutzer den Titel korrigiert, auch source_text aktualisieren.
     # Sonst verwendet "Reparse" beim erneuten LLM-Durchlauf den alten Text.
-    if "title" in updates and updates["title"] != task.title:
-        updates["source_text"] = updates["title"]
+    new_title = updates.get("title")
+    if new_title is not None and new_title != task.title:
+        updates["source_text"] = new_title
 
     # Ursprüngliches Fälligkeitsdatum speichern, wenn es geändert wird
     if "due_at" in updates and task.due_at and updates["due_at"] != task.due_at:
         updates["original_due_at"] = task.due_at
 
-    task = await repo.update(task, **updates)
+    # Direkt setzen (inkl. None), damit Felder gelöscht werden können —
+    # repo.update() würde None-Werte überspringen.
+    for key, value in updates.items():
+        setattr(task, key, value)
+    await db.commit()
     await db.refresh(task, ["subtasks", "task_tags"])
     return _task_to_out(task)
 
