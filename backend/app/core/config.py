@@ -35,17 +35,7 @@ class Settings(BaseSettings):
 
     rate_limit_enabled: bool = True
 
-    smtp_host: str = ""
-    smtp_port: int = 587
-    smtp_security: str = "starttls"
-    smtp_username: str = ""
-    smtp_password: str = ""
-    smtp_from_address: str = ""
-    smtp_from_name: str = "MyTasks"
-    smtp_reply_to: str = ""
-    smtp_encryption_key: str = ""
-
-    daily_summary_enabled_default: bool = False
+    # SMTP wird pro Nutzer konfiguriert (user_mail_configs), nicht global.
 
     def model_post_init(self, __context: object) -> None:
         if self.secret_key_file:

@@ -226,7 +226,7 @@ function EmailSettings() {
       setTestResult(
         r.success
           ? `✅ Test-Email an ${r.to} versendet`
-          : `❌ Versand fehlgeschlagen — SMTP in tasks.env prüfen`
+          : `❌ Versand fehlgeschlagen — eigene Mail-Konfiguration unter „Einstellungen" prüfen`
       );
     } catch (e) {
       setTestResult(`❌ Fehler: ${(e as Error).message}`);
@@ -275,9 +275,9 @@ function EmailSettings() {
       <section className="space-y-3 rounded border border-stone-200 bg-white p-4 dark:border-stone-800 dark:bg-stone-900">
         <h3 className="text-sm font-medium">Test-Versand</h3>
         <p className="text-xs text-stone-500">
-          SMTP-Konfiguration in <code>/etc/tasks/tasks.env</code> (
-          <code>TASKS_SMTP_HOST</code>, <code>PORT</code>, <code>USERNAME</code>, <code>PASSWORD</code>,
-          <code>FROM_ADDRESS</code>).
+          Nutzt deine eigene Mail-Konfiguration aus den{" "}
+          <a href="/settings" className="underline">Einstellungen</a>. Jeder Nutzer
+          verwaltet seine SMTP-Zugangsdaten selbst.
         </p>
         <div className="flex gap-2">
           <input
@@ -298,7 +298,8 @@ function EmailSettings() {
         <h3 className="text-sm font-medium">Tägliche Zusammenfassung</h3>
         <p className="text-xs text-stone-500">
           Versendet die Zusammenfassung sofort an alle Nutzer mit aktivierter
-          <code>daily_summary_enabled</code> und gesetztem Zeitpunkt in deren Zeitzone.
+          Zusammenfassung und hinterlegter Mail-Konfiguration (Nutzer ohne
+          Konfiguration werden übersprungen).
         </p>
         <div className="flex gap-2">
           <button onClick={sendSummary} disabled={sending} className="btn-primary">

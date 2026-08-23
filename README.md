@@ -1,14 +1,14 @@
 # MyTasks — LLM-gestützte Task-Verwaltung
 
-Selbst gehostete Task-Anwendung (FastAPI + SQLite + React), bei der ein lokales Ollama-Modell freien Text in strukturierte Tasks übersetzt.
+Selbst gehostete Task-Anwendung (FastAPI + SQLite + React), bei der freier Text in strukturierte Tasks übersetzt wird — primär über eine lokale regelbasierte Extraktion, optional mit Ollama-Modell als Fallback.
 
-**Version:** 0.4.9
+**Version:** 0.6.0
 
 ## Voraussetzungen
 
 - Debian 13 LXC oder VM (2 vCPU, 2 GB RAM, 16 GB Disk)
 - Python 3.13, Node.js 20
-- Ollama (lokal oder auf einem anderen Server im LAN)
+- Ollama (optional — ohne LLM läuft die lokale Extraktion weiter)
 - Root-Rechte für die Installation
 
 ## Installation
@@ -23,6 +23,9 @@ sudo ./install.sh --ollama-url http://dein-ollama-server:11434
 # ODER: Mit lokalem Ollama
 sudo ./install.sh --install-ollama
 
+# ODER: Ohne LLM (nur lokale Extraktion)
+sudo ./install.sh
+
 # 3. Im Browser öffnen
 # http://<server-ip>:5000/
 ```
@@ -36,7 +39,7 @@ cd MyTasks
 sudo ./update.sh
 ```
 
-Erhöht automatisch die Version (Patch-Increment), baut Frontend neu, führt DB-Migrationen aus, startet Dienste neu.
+Erhöht automatisch die Version (Patch-Increment), baut Frontend neu, führt DB-Migrationen aus, erstellt vorher ein Datenbank-Backup und startet die Dienste neu.
 
 ## Konfiguration
 
@@ -45,14 +48,20 @@ Alle Einstellungen in `/etc/tasks/tasks.env`:
 | Variable | Beschreibung |
 |----------|-------------|
 | `TASKS_OLLAMA_BASE_URL` | Ollama-URL (Default: `http://localhost:11434`) |
-| `TASKS_OLLAMA_MODEL` | LLM-Modell (Default: `gemma4:e2b`) |
-| `TASKS_SMTP_HOST` | SMTP-Server für tägliche E-Mail-Zusammenfassung |
+| `TASKS_OLLAMA_MODEL` | LLM-Modell; **leer = nur lokale Extraktion** (Default: leer) |
 | `TASKS_BIND_PORT` | HTTP-Port (Default: `5000`) |
+
+### E-Mail-Versand (pro Nutzer)
+
+SMTP-Zugangsdaten werden **pro Nutzer** in der App unter **Einstellungen** hinterlegt (Host, Port, STARTTLS/SSL, Benutzername, Passwort, Absenderadresse). Das Passwort wird verschlüsselt gespeichert. Ohne eigene Mail-Konfiguration versendet die App für diesen Nutzer keine E-Mails — es gibt keinen globalen SMTP-Fallback.
+
+Jeder Nutzer konfiguriert außerdem sein Profil (E-Mail, Anzeigename, Zeitzone) und die tägliche Zusammenfassung (Aktiv/Uhrzeit) unter **Einstellungen**.
 
 ## Backup & Restore
 
 ```bash
 # Tägliches Backup läuft automatisch um 03:00 via Cron.
+# Vor jedem Update wird zusätzlich ein Rolling-Backup erstellt (letzte 3).
 
 # Manuelles Backup:
 /opt/tasks/deploy/backup.sh
@@ -65,7 +74,7 @@ sudo /opt/tasks/deploy/restore.sh /var/lib/tasks/backups/daily/tasks-YYYYMMDD.db
 
 ```bash
 sudo ./uninstall.sh
-# Datenbank wird nach /root/kapture-backup-<datum>/ gesichert
+# Datenbank wird zur Sicherheit gesichert
 ```
 
 ## Architektur
@@ -73,17 +82,20 @@ sudo ./uninstall.sh
 ```
 Browser → http://server:5000/
          ├── FastAPI REST API (/api/v1/)
-         ├── React SPA (static files)
+         ├── React SPA + PWA (static files)
          └── SSE (/api/v1/events) — Echtzeit-Updates
 
-Worker (systemd) → Ollama HTTP → LLM Extraktion
-                 → SQLite (WAL) → Datenbank
-                 → SMTP → Tägliche E-Mail-Zusammenfassung
+Task-Pipeline → Lokale Extraktion (regelbasiert, ~1 ms)
+              → Ollama HTTP als Fallback bei niedriger Confidence (optional)
+
+Worker (systemd) → Scheduler (Zusammenfassungen, Wiederholungen)
+                 → SQLite (WAL)
+                 → Pro-Nutzer-SMTP → E-Mail-Versand
 ```
 
 ## Datenbank
 
-SQLite mit WAL-Modus. Ort: `/var/lib/tasks/tasks.db`
+SQLite mit WAL-Modus. Ort: `/var/lib/tasks/tasks.db`. Schema-Migrationen laufen beim Start automatisch (`init_db`).
 
 ## Logs
 

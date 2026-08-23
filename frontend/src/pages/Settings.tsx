@@ -11,7 +11,149 @@ interface MailConfig {
   from_name: string | null;
 }
 
+interface Me {
+  username: string;
+  email: string | null;
+  display_name: string | null;
+  timezone: string;
+  daily_summary_enabled: boolean;
+  daily_summary_time: string;
+}
+
+const TIMEZONES = [
+  "Europe/Berlin",
+  "Europe/Vienna",
+  "Europe/Zurich",
+  "Europe/London",
+  "UTC",
+];
+
 export function Settings() {
+  const [me, setMe] = useState<Me | null>(null);
+  const [profileMsg, setProfileMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [savingProfile, setSavingProfile] = useState(false);
+
+  // Profil-Drafts
+  const [email, setEmail] = useState("");
+  const [displayName, setDisplayName] = useState("");
+  const [timezone, setTimezone] = useState("Europe/Berlin");
+  const [summaryEnabled, setSummaryEnabled] = useState(false);
+  const [summaryTime, setSummaryTime] = useState("07:00");
+
+  useEffect(() => {
+    api<Me>("/auth/me").then((m) => {
+      setMe(m);
+      setEmail(m.email ?? "");
+      setDisplayName(m.display_name ?? "");
+      setTimezone(m.timezone);
+      setSummaryEnabled(m.daily_summary_enabled);
+      setSummaryTime(m.daily_summary_time);
+    });
+  }, []);
+
+  const saveProfile = async () => {
+    setSavingProfile(true);
+    setProfileMsg(null);
+    try {
+      await api("/auth/me", {
+        method: "PATCH",
+        body: JSON.stringify({
+          email: email || null,
+          display_name: displayName || null,
+          timezone,
+          daily_summary_enabled: summaryEnabled,
+          daily_summary_time: summaryTime,
+        }),
+      });
+      setProfileMsg({ ok: true, text: "Profil gespeichert." });
+    } catch (e) {
+      setProfileMsg({ ok: false, text: `Speichern fehlgeschlagen: ${e}` });
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <h2 className="text-xl font-bold">Einstellungen</h2>
+
+      <section className="rounded-lg border border-stone-200 p-4 dark:border-stone-800">
+        <h3 className="mb-1 font-semibold">Profil</h3>
+        <p className="mb-4 text-xs text-stone-500">
+          Angemeldet als <strong>{me?.username}</strong>
+        </p>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div>
+            <label className="mb-1 block text-xs text-stone-500">Anzeigename</label>
+            <input
+              className="input"
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              placeholder="optional"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs text-stone-500">
+              E-Mail (Empfänger der Zusammenfassung)
+            </label>
+            <input
+              className="input"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="ich@example.de"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs text-stone-500">Zeitzone</label>
+            <select className="input" value={timezone} onChange={(e) => setTimezone(e.target.value)}>
+              {TIMEZONES.map((tz) => (
+                <option key={tz} value={tz}>{tz}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <h4 className="mt-4 mb-2 text-sm font-medium">Tägliche Zusammenfassung</h4>
+        <div className="flex flex-wrap items-end gap-3">
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={summaryEnabled}
+              onChange={(e) => setSummaryEnabled(e.target.checked)}
+            />
+            Aktiv
+          </label>
+          <div>
+            <label className="mb-1 block text-xs text-stone-500">Uhrzeit</label>
+            <input
+              className="input w-28"
+              type="time"
+              value={summaryTime}
+              disabled={!summaryEnabled}
+              onChange={(e) => setSummaryTime(e.target.value)}
+            />
+          </div>
+        </div>
+
+        <div className="mt-4">
+          <button onClick={saveProfile} disabled={savingProfile} className="btn-primary text-sm">
+            {savingProfile ? "Speichern…" : "Profil speichern"}
+          </button>
+        </div>
+        {profileMsg && (
+          <p className={`mt-3 text-sm ${profileMsg.ok ? "text-green-600" : "text-red-600"}`}>
+            {profileMsg.text}
+          </p>
+        )}
+      </section>
+
+      <MailSection />
+    </div>
+  );
+}
+
+function MailSection() {
   const [cfg, setCfg] = useState<MailConfig | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [password, setPassword] = useState("");
@@ -117,18 +259,15 @@ export function Settings() {
   if (!loaded) return <div className="text-stone-500">Lade…</div>;
 
   return (
-    <div className="space-y-6">
-      <h2 className="text-xl font-bold">Einstellungen</h2>
-
-      <section className="rounded-lg border border-stone-200 p-4 dark:border-stone-800">
-        <div className="mb-1 flex items-center justify-between">
-          <h3 className="font-semibold">E-Mail-Versand</h3>
-          <span
-            className={`text-xs ${cfg?.has_password || cfg ? "text-green-600" : "text-stone-400"}`}
-          >
-            {cfg ? "konfiguriert" : "nicht konfiguriert"}
-          </span>
-        </div>
+    <section className="rounded-lg border border-stone-200 p-4 dark:border-stone-800">
+      <div className="mb-1 flex items-center justify-between">
+        <h3 className="font-semibold">E-Mail-Versand</h3>
+        <span
+          className={`text-xs ${cfg ? "text-green-600" : "text-stone-400"}`}
+        >
+          {cfg ? "konfiguriert" : "nicht konfiguriert"}
+        </span>
+      </div>
         <p className="mb-4 text-xs text-stone-500">
           Eigene SMTP-Zugangsdaten für Test-Emails und die tägliche Zusammenfassung.
           Ohne Konfiguration werden keine E-Mails versendet. Das Passwort wird
@@ -224,7 +363,6 @@ export function Settings() {
             {message.text}
           </p>
         )}
-      </section>
-    </div>
+    </section>
   );
 }
