@@ -39,7 +39,7 @@ cd MyTasks
 sudo ./update.sh
 ```
 
-Erhöht automatisch die Version (Patch-Increment), baut Frontend neu, führt DB-Migrationen aus, erstellt vorher ein Datenbank-Backup und startet die Dienste neu.
+Synchronisiert den kompletten Code-Stand (alle Änderungen seit dem letzten Update in einem Lauf), baut Frontend neu, führt DB-Migrationen aus, erstellt vorher ein Datenbank-Backup und startet die Dienste neu. Die Versionsnummer wird via Git gepflegt; optional mit `--bump patch|minor|major` erhöhen.
 
 ## Konfiguration
 

@@ -9,6 +9,7 @@ set -euo pipefail
 # Aufruf:  sudo ./update.sh
 #          sudo ./update.sh --skip-frontend
 #          sudo ./update.sh --skip-migrations
+#          sudo ./update.sh --bump patch   (Version +1, sonst kein Bump)
 # ──────────────────────────────────────────────────────────────────────
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -25,15 +26,15 @@ SERVICE_GROUP="tasks"
 DRY_RUN=false
 SKIP_FRONTEND=false
 SKIP_MIGRATIONS=false
-BUMP="patch"
+BUMP="none"
 
 usage() {
     cat <<EOF
 Usage: $0 [optionen]
-  --dry-run          Zeigt an, was passieren würde, ohne Änderungen
+   --dry-run           Zeigt an, was passieren würde, ohne Änderungen
   --skip-frontend    Frontend-Build überspringen
   --skip-migrations  DB-Migrationen überspringen
-  --bump LEVEL       Versions-Schritt: patch (default), minor, major
+  --bump LEVEL       Versions-Schritt: patch, minor, major (Default: kein Bump)
   -h, --help         Diese Hilfe
 EOF
     exit 1
@@ -131,9 +132,12 @@ else
     find "$BACKUP_DIR" -name "pre-update-*.db" -type f | sort -r | tail -n +4 | xargs -r rm -f
 fi
 
-# ── 2. Versions-Erhöhung ────────────────────────────────────────────
-log "» Versions-Erhöhung ($BUMP)..."
-CURRENT_VERSION=$(python3 -c "
+# ── 2. Versions-Erhöhung (optional, --bump) ─────────────────────────
+if [[ "$BUMP" == "none" ]]; then
+    log "» Versions-Erhöhung übersprungen (Version wird via Git gepflegt)"
+else
+    log "» Versions-Erhöhung ($BUMP)..."
+    CURRENT_VERSION=$(python3 -c "
 import re, sys
 try:
     text = open('$BACKEND_DIR/app/__init__.py').read()
@@ -142,16 +146,17 @@ try:
 except FileNotFoundError:
     print('0.0.0')
 " 2>/dev/null || echo "0.0.0")
-NEW_VERSION=$(bump_version "$CURRENT_VERSION" "$BUMP")
-log "  $CURRENT_VERSION → $NEW_VERSION"
+    NEW_VERSION=$(bump_version "$CURRENT_VERSION" "$BUMP")
+    log "  $CURRENT_VERSION → $NEW_VERSION"
 
-if [[ "$DRY_RUN" == "true" ]]; then
-    log "  [DRY-RUN] würde app/__init__.py auf $NEW_VERSION setzen"
-else
-    if [[ "$CURRENT_VERSION" == "0.0.0" ]]; then
-        warn "  app/__init__.py nicht gefunden — überspringe Bump"
+    if [[ "$DRY_RUN" == "true" ]]; then
+        log "  [DRY-RUN] würde app/__init__.py auf $NEW_VERSION setzen"
     else
-        write_version "$BACKEND_DIR/app/__init__.py" "$NEW_VERSION"
+        if [[ "$CURRENT_VERSION" == "0.0.0" ]]; then
+            warn "  app/__init__.py nicht gefunden — überspringe Bump"
+        else
+            write_version "$BACKEND_DIR/app/__init__.py" "$NEW_VERSION"
+        fi
     fi
 fi
 
