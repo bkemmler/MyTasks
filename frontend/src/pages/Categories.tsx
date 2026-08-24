@@ -1,7 +1,9 @@
 import { useState, type FormEvent } from "react";
+import { useI18n } from "../lib/i18n";
 import { useCategories, useCreateCategory, useDeleteCategory, useUpdateCategory } from "../lib/queries";
 
 export function Categories() {
+  const { t } = useI18n();
   const { data: categories, isLoading } = useCategories();
   const create = useCreateCategory();
   const update = useUpdateCategory();
@@ -22,13 +24,13 @@ export function Categories() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Kategorien</h1>
+      <h1 className="text-2xl font-bold">{t("categories.heading")}</h1>
 
       <form onSubmit={submit} className="flex gap-2">
         <input
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="Neue Kategorie…"
+          placeholder={t("categories.newPlaceholder")}
           className="input flex-1"
         />
         <input
@@ -43,7 +45,7 @@ export function Categories() {
       </form>
 
       {isLoading ? (
-        <p>Lade…</p>
+        <p>{t("common.loading")}</p>
       ) : (
         <ul className="space-y-1">
           {categories?.map((c) => (
@@ -60,7 +62,7 @@ export function Categories() {
               <span className="flex-1">{c.name}</span>
               <button
                 onClick={() => {
-                  if (confirm(`Kategorie "${c.name}" löschen?`)) del.mutate(c.id);
+                  if (confirm(t("categories.deleteConfirm", { name: c.name }))) del.mutate(c.id);
                 }}
                 className="btn text-xs text-red-600"
               >

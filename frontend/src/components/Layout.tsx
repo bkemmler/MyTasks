@@ -1,12 +1,16 @@
 import { useEffect, useState, type ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../lib/auth";
 import { useHealth, useVersion } from "../lib/queries";
+import { useI18n } from "../lib/i18n";
 import { CaptureInput } from "./CaptureInput";
 import { useSSE } from "../lib/sse";
 
 export function Layout({ children }: { children: ReactNode }) {
   const { user, logout } = useAuth();
+  const { t, setLanguage, lang } = useI18n();
+  const { t: _t } = useTranslation();
   const { data: health } = useHealth();
   const { data: version } = useVersion();
   const navigate = useNavigate();
@@ -41,7 +45,7 @@ export function Layout({ children }: { children: ReactNode }) {
                 `tab whitespace-nowrap ${isActive ? "tab-active" : ""}`
               }
             >
-              Heute
+              {t("nav.today")}
             </NavLink>
             <NavLink
               to="/tasks/morgen"
@@ -49,7 +53,7 @@ export function Layout({ children }: { children: ReactNode }) {
                 `tab whitespace-nowrap ${isActive ? "tab-active" : ""}`
               }
             >
-              Morgen
+              {t("nav.tomorrow")}
             </NavLink>
             <NavLink
               to="/tasks/woche"
@@ -57,7 +61,7 @@ export function Layout({ children }: { children: ReactNode }) {
                 `tab whitespace-nowrap ${isActive ? "tab-active" : ""}`
               }
             >
-              Woche
+              {t("nav.week")}
             </NavLink>
             <NavLink
               to="/tasks/naechste_woche"
@@ -65,7 +69,7 @@ export function Layout({ children }: { children: ReactNode }) {
                 `tab whitespace-nowrap ${isActive ? "tab-active" : ""}`
               }
             >
-              Nächste
+              {t("nav.next")}
             </NavLink>
             <NavLink
               to="/tasks/eingang"
@@ -73,7 +77,7 @@ export function Layout({ children }: { children: ReactNode }) {
                 `tab ${isActive ? "tab-active" : ""}`
               }
             >
-              Eingang
+              {t("nav.inbox")}
             </NavLink>
             <NavLink
               to="/tasks/pruefung"
@@ -89,7 +93,7 @@ export function Layout({ children }: { children: ReactNode }) {
                 `tab ${isActive ? "tab-active" : ""}`
               }
             >
-              Alle
+              {t("nav.all")}
             </NavLink>
             <NavLink
               to="/categories"
@@ -97,7 +101,7 @@ export function Layout({ children }: { children: ReactNode }) {
                 `tab ${isActive ? "tab-active" : ""}`
               }
             >
-              Kategorien
+              {t("nav.categories")}
             </NavLink>
             <NavLink
               to="/reports"
@@ -105,7 +109,7 @@ export function Layout({ children }: { children: ReactNode }) {
                 `tab ${isActive ? "tab-active" : ""}`
               }
             >
-              Berichte
+              {t("nav.reports")}
             </NavLink>
             <NavLink
               to="/settings"
@@ -113,7 +117,7 @@ export function Layout({ children }: { children: ReactNode }) {
                 `tab ${isActive ? "tab-active" : ""}`
               }
             >
-              Einstellungen
+              {t("nav.settings")}
             </NavLink>
             {user?.is_admin && (
               <NavLink
@@ -139,7 +143,7 @@ export function Layout({ children }: { children: ReactNode }) {
               }`}
               title={
                 health?.ollama === "per-user"
-                  ? "LLM: pro Nutzer konfiguriert (Einstellungen)"
+                  ? t("nav.llmPerUser")
                   : `Ollama: ${health?.ollama ?? "?"}`
               }
             />
@@ -147,6 +151,20 @@ export function Layout({ children }: { children: ReactNode }) {
             <span className="rounded bg-stone-100 px-1.5 py-0.5 font-mono text-xs text-stone-500 dark:bg-stone-800 dark:text-stone-400">
               v{version?.app ?? "?"}
             </span>
+            <div className="flex overflow-hidden rounded border border-stone-300 text-xs dark:border-stone-600">
+              <button
+                onClick={() => setLanguage("de")}
+                className={`px-2 py-0.5 ${lang === "de" ? "bg-stone-700 text-white" : "hover:bg-stone-100 dark:hover:bg-stone-800"}`}
+              >
+                DE
+              </button>
+              <button
+                onClick={() => setLanguage("en")}
+                className={`px-2 py-0.5 ${lang === "en" ? "bg-stone-700 text-white" : "hover:bg-stone-100 dark:hover:bg-stone-800"}`}
+              >
+                EN
+              </button>
+            </div>
             <button
               onClick={async () => {
                 await logout();
@@ -154,7 +172,7 @@ export function Layout({ children }: { children: ReactNode }) {
               }}
               className="btn"
             >
-              Abmelden
+              {t("nav.logout")}
             </button>
           </div>
         </div>
@@ -172,10 +190,10 @@ export function Layout({ children }: { children: ReactNode }) {
             <CaptureInput
               autoFocus
               onDone={() => setShowCapture(false)}
-              placeholder="Was ist zu tun?"
+              placeholder={t("capture.modalPlaceholder")}
             />
             <p className="mt-2 text-xs text-stone-500">
-              Enter zum Erfassen · Esc zum Schließen
+              {t("capture.modalHint")}
             </p>
           </div>
         </div>

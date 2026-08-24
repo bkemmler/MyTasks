@@ -1,18 +1,20 @@
 import { useState, type FormEvent } from "react";
+import { useI18n } from "../lib/i18n";
 import { NavLink, Route, Routes } from "react-router-dom";
 import { api } from "../lib/api";
 import { useCreateUser, useDeleteUser, useHealth, useUpdateUser, useUsers, type AdminUser } from "../lib/queries";
 
 export function Admin() {
+  const { t } = useI18n();
   return (
     <div>
-      <h1 className="mb-4 text-2xl font-bold">Administration</h1>
+      <h1 className="mb-4 text-2xl font-bold">{t("admin.heading")}</h1>
       <nav className="mb-4 flex gap-1 border-b border-stone-200 dark:border-stone-800">
         <NavLink end to="/admin" className={({ isActive }) => `tab ${isActive ? "tab-active" : ""}`}>
-          Nutzer
+          {t("admin.tabUsers")}
         </NavLink>
         <NavLink to="/admin/system" className={({ isActive }) => `tab ${isActive ? "tab-active" : ""}`}>
-          System
+          {t("admin.tabSystem")}
         </NavLink>
         <NavLink
           to="/admin/email"
@@ -20,7 +22,7 @@ export function Admin() {
             `tab ${isActive ? "tab-active" : ""}`
           }
         >
-          E-Mail
+          {t("admin.tabEmail")}
         </NavLink>
       </nav>
       <Routes>
@@ -33,6 +35,7 @@ export function Admin() {
 }
 
 function Users() {
+  const { t } = useI18n();
   const { data, isLoading } = useUsers();
   const create = useCreateUser();
   const update = useUpdateUser();
@@ -54,28 +57,28 @@ function Users() {
     });
   }
 
-  if (isLoading) return <p>Lade…</p>;
+  if (isLoading) return <p>{t("common.loading")}</p>;
 
   return (
     <div className="space-y-6">
       <form onSubmit={submit} className="space-y-2 rounded border border-stone-200 bg-white p-4 dark:border-stone-800 dark:bg-stone-900">
-        <h2 className="font-medium">Neuen Nutzer anlegen</h2>
+        <h2 className="font-medium">{t("admin.newUser")}</h2>
         <div className="grid gap-2 sm:grid-cols-2">
           <input
-            placeholder="Username"
+            placeholder={t("admin.phUsername")}
             value={form.username}
             onChange={(e) => setForm({ ...form, username: e.target.value })}
             className="input"
           />
           <input
             type="password"
-            placeholder="Passwort (min 12 Zeichen)"
+            placeholder={t("admin.phPassword")}
             value={form.password}
             onChange={(e) => setForm({ ...form, password: e.target.value })}
             className="input"
           />
           <input
-            placeholder="Anzeigename (optional)"
+            placeholder={t("admin.phDisplayName")}
             value={form.display_name}
             onChange={(e) => setForm({ ...form, display_name: e.target.value })}
             className="input"
@@ -86,21 +89,21 @@ function Users() {
               checked={form.is_admin}
               onChange={(e) => setForm({ ...form, is_admin: e.target.checked })}
             />
-            <span>Admin</span>
+            <span>{t("admin.isAdmin")}</span>
           </label>
         </div>
         <button type="submit" className="btn-primary" disabled={create.isPending}>
-          Anlegen
+          {t("admin.create")}
         </button>
       </form>
 
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-stone-200 text-left dark:border-stone-800">
-            <th className="py-2">Username</th>
-            <th>Name</th>
-            <th>Rolle</th>
-            <th>Status</th>
+            <th className="py-2">{t("admin.thUsername")}</th>
+            <th>{t("admin.thName")}</th>
+            <th>{t("admin.thRole")}</th>
+            <th>{t("admin.thStatus")}</th>
             <th></th>
           </tr>
         </thead>
@@ -116,7 +119,7 @@ function Users() {
                 update.mutate({ id: u.id, body: { is_active: !u.is_active } })
               }
               onDelete={(hard) => {
-                if (confirm(`Nutzer "${u.username}" wirklich löschen?`)) {
+                if (confirm(t("admin.deleteConfirm", { name: u.username }))) {
                   del.mutate({ id: u.id, hard });
                 }
               }}
@@ -139,6 +142,7 @@ function UserRow({
   onToggleActive: () => void;
   onDelete: (hard: boolean) => void;
 }) {
+  const { t } = useI18n();
   return (
     <tr className="border-b border-stone-100 dark:border-stone-800">
       <td className="py-2 font-mono">{user.username}</td>
@@ -148,7 +152,7 @@ function UserRow({
           onClick={onToggleAdmin}
           className={`rounded px-1.5 py-0.5 text-xs ${user.is_admin ? "bg-blue-100 text-blue-800" : "bg-stone-100"}`}
         >
-          {user.is_admin ? "Admin" : "User"}
+          {user.is_admin ? t("admin.roleAdmin") : t("admin.roleUser")}
         </button>
       </td>
       <td>
@@ -156,15 +160,15 @@ function UserRow({
           onClick={onToggleActive}
           className={`rounded px-1.5 py-0.5 text-xs ${user.is_active ? "bg-green-100 text-green-800" : "bg-stone-200 text-stone-600"}`}
         >
-          {user.is_active ? "aktiv" : "inaktiv"}
+          {user.is_active ? t("admin.active") : t("admin.inactive")}
         </button>
       </td>
       <td className="text-right">
         <button onClick={() => onDelete(false)} className="btn text-xs">
-          Deaktivieren
+          {t("admin.deactivate")}
         </button>
         <button onClick={() => onDelete(true)} className="btn text-xs text-red-600">
-          Hart löschen
+          {t("admin.hardDelete")}
         </button>
       </td>
     </tr>
@@ -172,16 +176,17 @@ function UserRow({
 }
 
 function System() {
+  const { t } = useI18n();
   const { data: health } = useHealth();
   return (
     <div className="space-y-4">
-      <h2 className="text-lg font-medium">System</h2>
+      <h2 className="text-lg font-medium">{t("admin.systemHeading")}</h2>
       <dl className="grid grid-cols-2 gap-2 rounded border border-stone-200 bg-white p-4 dark:border-stone-800 dark:bg-stone-900">
-        <dt className="text-stone-500">Status</dt>
+        <dt className="text-stone-500">{t("admin.dtStatus")}</dt>
         <dd>{health?.status ?? "?"}</dd>
-        <dt className="text-stone-500">Version</dt>
+        <dt className="text-stone-500">{t("admin.dtVersion")}</dt>
         <dd>{health?.version ?? "?"}</dd>
-        <dt className="text-stone-500">Uptime</dt>
+        <dt className="text-stone-500">{t("admin.dtUptime")}</dt>
         <dd>{health ? `${Math.round(health.uptime_seconds)}s` : "?"}</dd>
         <dt className="text-stone-500">Ollama</dt>
         <dd>
@@ -208,6 +213,7 @@ function System() {
 }
 
 function EmailSettings() {
+  const { t } = useI18n();
   const [testAddress, setTestAddress] = useState("");
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<string | null>(null);
@@ -225,8 +231,8 @@ function EmailSettings() {
       });
       setTestResult(
         r.success
-          ? `✅ Test-Email an ${r.to} versendet`
-          : `❌ Versand fehlgeschlagen — eigene Mail-Konfiguration unter „Einstellungen" prüfen`
+          ? t("admin.testOk", { to: r.to })
+          : t("admin.testFail")
       );
     } catch (e) {
       setTestResult(`❌ Fehler: ${(e as Error).message}`);
@@ -270,43 +276,39 @@ function EmailSettings() {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-lg font-medium">E-Mail-Versand</h2>
+      <h2 className="text-lg font-medium">{t("admin.emailHeading")}</h2>
 
       <section className="space-y-3 rounded border border-stone-200 bg-white p-4 dark:border-stone-800 dark:bg-stone-900">
-        <h3 className="text-sm font-medium">Test-Versand</h3>
+        <h3 className="text-sm font-medium">{t("admin.testSendHeading")}</h3>
         <p className="text-xs text-stone-500">
-          Nutzt deine eigene Mail-Konfiguration aus den{" "}
-          <a href="/settings" className="underline">Einstellungen</a>. Jeder Nutzer
-          verwaltet seine SMTP-Zugangsdaten selbst.
+{t("admin.testSendHint")}
         </p>
         <div className="flex gap-2">
           <input
             type="email"
-            placeholder="empfaenger@example.com"
+            placeholder={t("admin.phRecipient")}
             value={testAddress}
             onChange={(e) => setTestAddress(e.target.value)}
             className="input flex-1"
           />
           <button onClick={sendTest} disabled={!testAddress || testing} className="btn-primary">
-            {testing ? "Sende…" : "Test senden"}
+            {testing ? t("settings.sending") : t("admin.sendTest")}
           </button>
         </div>
         {testResult && <p className="text-sm">{testResult}</p>}
       </section>
 
       <section className="space-y-3 rounded border border-stone-200 bg-white p-4 dark:border-stone-800 dark:bg-stone-900">
-        <h3 className="text-sm font-medium">Tägliche Zusammenfassung</h3>
+        <h3 className="text-sm font-medium">{t("admin.summaryHeading")}</h3>
         <p className="text-xs text-stone-500">
-          Versendet die Zusammenfassung sofort an alle Nutzer mit aktivierter
-          Zusammenfassung und hinterlegter Mail-Konfiguration (Nutzer ohne
-          Konfiguration werden übersprungen).
+{t("admin.summaryHint")}
         </p>
         <div className="flex gap-2">
           <button onClick={sendSummary} disabled={sending} className="btn-primary">
-            {sending ? "Sende…" : "Jetzt an alle senden"}
+            {sending ? t("settings.sending") : t("admin.sendAllNow")}
           </button>
           <button onClick={previewSummary} className="btn">
-            📄 Vorschau (Admin)
+            {t("admin.preview")}
           </button>
         </div>
         {sendResult && <p className="text-sm">{sendResult}</p>}

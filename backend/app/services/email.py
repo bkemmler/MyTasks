@@ -64,26 +64,27 @@ async def send_email(
     return False
 
 
-def render_summary_html(user: dict[str, Any], tasks_by_section: dict[str, list[dict]]) -> str:
-    """Rendert die HTML-Version der täglichen Zusammenfassung."""
-    sections = {
-        "ueberfaellig": ("Überfällig", "#dc2626"),
-        "heute": ("Heute fällig", "#2563eb"),
-        "in_bearbeitung": ("In Bearbeitung", "#7c3aed"),
-        "wartend": ("Wartend", "#d97706"),
-        "diese_woche": ("Diese Woche", "#0891b2"),
-    }
+def render_summary_html(
+    user: dict[str, Any],
+    tasks_by_section: dict[str, list[dict]],
+    locale: str | None = None,
+) -> str:
+    """Rendert die HTML-Version der täglichen Zusammenfassung (lokalisiert)."""
+    from app.services.i18n import SECTION_KEYS
+    from app.services.i18n import t as tr
+
+    sections = {key: (tr(locale, i18n_key), color) for key, i18n_key, color in SECTION_KEYS}
     css = "font-family:system-ui,sans-serif;max-width:680px;margin:0 auto;color:#1c1917;"
     h2 = "font-size:14px;font-weight:600;margin:24px 0 8px;border-bottom:1px solid #e7e5e4;padding-bottom:4px;"
     task = "padding:6px 0;border-bottom:1px solid #f5f5f4;"
     prio_colors = {1: "#dc2626", 2: "#ea580c", 3: "#a8a29e", 4: "#d6d3d1"}
-    intro = f"Hallo {user.get('display_name') or user.get('username', '')},"
+    intro = f"{tr(locale, 'summary.greeting', name=user.get('display_name') or user.get('username', ''))}"
 
     html_parts = [
         f'<div style="{css}">',
-        "<h1 style=\"font-size:18px;margin:16px 0;\">MyTasks — Tägliche Zusammenfassung</h1>",
+        "<h1 style=\"font-size:18px;margin:16px 0;\">MyTasks</h1>",
         f"<p>{intro}</p>",
-        "<p>Hier deine Übersicht für heute:</p>",
+        f"<p>{tr(locale, 'summary.intro')}</p>",
     ]
 
     for key, (label, color) in sections.items():
@@ -91,70 +92,75 @@ def render_summary_html(user: dict[str, Any], tasks_by_section: dict[str, list[d
         if not items:
             continue
         html_parts.append(f'<h2 style="{h2}color:{color};">{label} ({len(items)})</h2>')
-        for t in items:
+        for item in items:
             due_str = ""
-            if t.get("due_at"):
-                due_str = f' <span style="color:#78716c;font-size:12px;">· {t["due_at"]}</span>'
+            if item.get("due_at"):
+                due_str = f' <span style="color:#78716c;font-size:12px;">· {item["due_at"]}</span>'
             wait_str = ""
-            if t.get("waiting_for"):
-                wait_str = f' <span style="color:#d97706;font-size:12px;">· wartet auf {t["waiting_for"]}</span>'
-            p_color = prio_colors.get(t.get("priority", 3), "#a8a29e")
+            if item.get("waiting_for"):
+                wait_str = (
+                    f' <span style="color:#d97706;font-size:12px;">· '
+                    f"{tr(locale, 'waiting_for', who=item['waiting_for'])}</span>"
+                )
+            p_color = prio_colors.get(item.get("priority", 3), "#a8a29e")
             html_parts.append(
                 f'<div style="{task}">'
                 f'<span style="display:inline-block;width:24px;text-align:center;'
                 f'background:{p_color};color:white;border-radius:3px;font-size:11px;font-weight:600;">'
-                f'P{t.get("priority", 3)}</span> '
-                f'<span>{t["title"]}</span>{due_str}{wait_str}'
-                f"</div>"
+                f'P{item.get("priority", 3)}</span> '
+                f'<span>{item["title"]}</span>{due_str}{wait_str}'
+                "</div>"
             )
 
     if tasks_by_section.get("llm_einordnung"):
         html_parts.append(
-            f'<h2 style="{h2}color:#7c3aed;">Empfehlung</h2>'
+            f'<h2 style="{h2}color:#7c3aed;">{tr(locale, "section.empfehlung")}</h2>'
             f'<p style="padding:8px;background:#f5f3ff;border-radius:6px;color:#5b21b6;">'
             f"{tasks_by_section['llm_einordnung']}</p>"
         )
 
     html_parts.append(
-        "<p style=\"color:#a8a29e;font-size:12px;margin-top:32px;\">"
-        "MyTasks — LLM-gestützte Task-Verwaltung</p>"
-        "</div>"
+        f"<p style=\"color:#a8a29e;font-size:12px;margin-top:32px;\">"
+        f"{tr(locale, 'footer')}</p></div>"
     )
     return "".join(html_parts)
 
 
-def render_summary_text(user: dict[str, Any], tasks_by_section: dict[str, list[dict]]) -> str:
+def render_summary_text(
+    user: dict[str, Any],
+    tasks_by_section: dict[str, list[dict]],
+    locale: str | None = None,
+) -> str:
     """Plain-Text-Version der Zusammenfassung (für Clients ohne HTML)."""
-    lines = [f"Hallo {user.get('display_name') or user.get('username', '')},",
-             "",
-             "Hier deine Übersicht für heute:",
-             ""]
+    from app.services.i18n import SECTION_KEYS
+    from app.services.i18n import t as tr
 
-    for key, label in [
-        ("ueberfaellig", "ÜBERFÄLLIG"),
-        ("heute", "HEUTE"),
-        ("in_bearbeitung", "IN BEARBEITUNG"),
-        ("wartend", "WARTEND"),
-        ("diese_woche", "DIESE WOCHE"),
-    ]:
+    lines = [
+        tr(locale, "summary.greeting", name=user.get("display_name") or user.get("username", "")),
+        "",
+        tr(locale, "summary.intro"),
+        "",
+    ]
+
+    for key, i18n_key, _color in SECTION_KEYS:
         items = tasks_by_section.get(key, [])
         if not items:
             continue
-        lines.append(f"== {label} ({len(items)}) ==")
-        for t in items:
-            parts = [f"[P{t.get('priority', 3)}] {t['title']}"]
-            if t.get("due_at"):
-                parts.append(f"· {t['due_at']}")
-            if t.get("waiting_for"):
-                parts.append(f"· wartet auf {t['waiting_for']}")
+        lines.append(f"== {tr(locale, i18n_key).upper()} ({len(items)}) ==")
+        for item in items:
+            parts = [f"[P{item.get('priority', 3)}] {item['title']}"]
+            if item.get("due_at"):
+                parts.append(f"· {item['due_at']}")
+            if item.get("waiting_for"):
+                parts.append(f"· {tr(locale, 'waiting_for', who=item['waiting_for'])}")
             lines.append("  " + " ".join(parts))
         lines.append("")
 
     if tasks_by_section.get("llm_einordnung"):
-        lines.append("== EMPFEHLUNG ==")
+        lines.append(f"== {tr(locale, 'section.empfehlung').upper()} ==")
         lines.append(tasks_by_section["llm_einordnung"])
         lines.append("")
 
     lines.append("--")
-    lines.append("MyTasks — LLM-gestützte Task-Verwaltung")
+    lines.append(tr(locale, "footer"))
     return "\n".join(lines)

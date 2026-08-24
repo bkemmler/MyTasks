@@ -69,8 +69,8 @@ async def build_summary_for_user(
         sections["llm_einordnung"] = llm_einordnung
 
     user_dict = {"username": user.username, "display_name": user.display_name}
-    text = render_summary_text(user_dict, sections)
-    html = render_summary_html(user_dict, sections)
+    text = render_summary_text(user_dict, sections, locale=user.locale)
+    html = render_summary_html(user_dict, sections, locale=user.locale)
     return sections, text, html
 
 
@@ -153,7 +153,13 @@ async def send_daily_summary_to_user(db: AsyncSession, user: User) -> bool:
     if not any(sections.get(k) for k in ("ueberfaellig", "heute", "in_bearbeitung", "wartend", "diese_woche")):
         return False
 
-    subject = f"MyTasks — Tageszusammenfassung {datetime.now().strftime('%d.%m.%Y')}"
+    from app.services.i18n import t as tr
+
+    subject = tr(
+        user.locale,
+        "summary.subject",
+        date=datetime.now().strftime("%d.%m.%Y"),
+    )
     return await send_email(
         to=user.email,
         subject=subject,

@@ -6,15 +6,17 @@ import { Categories } from "./pages/Categories";
 import { Reports } from "./pages/Reports";
 import { Settings } from "./pages/Settings";
 import { Admin } from "./pages/Admin";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "./lib/auth";
 
 export function App() {
   const { user, isLoading } = useAuth();
+  const { t } = useTranslation();
 
   if (isLoading) {
     return (
       <div className="flex h-screen items-center justify-center text-stone-500">
-        Lade…
+        {t("common.loading")}
       </div>
     );
   }

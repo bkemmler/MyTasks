@@ -263,11 +263,13 @@ async def test_mail_config(
     fake_tasks = {
         "heute": [{"title": "Das ist eine Test-Email von MyTasks", "priority": 3, "due_at": None}],
     }
+    from app.services.i18n import t as tr
+
     ok = await send_email(
         to=target,
-        subject="[MyTasks] Test-Email",
-        text_body=render_summary_text(fake_user, fake_tasks),
-        html_body=render_summary_html(fake_user, fake_tasks),
+        subject=tr(current_user.locale, "test.subject"),
+        text_body=render_summary_text(fake_user, fake_tasks, locale=current_user.locale),
+        html_body=render_summary_html(fake_user, fake_tasks, locale=current_user.locale),
         smtp=smtp,
     )
     return {"success": ok, "to": target}

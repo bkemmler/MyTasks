@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, type FormEvent } from "react";
+import { useI18n } from "../lib/i18n";
 import { useCapture } from "../lib/queries";
 
 interface Props {
@@ -20,6 +21,7 @@ function getInitialMode(): Mode {
 }
 
 export function CaptureInput({ autoFocus, placeholder, onDone, viewTitle, taskCount }: Props) {
+  const { t } = useI18n();
   const [text, setText] = useState("");
   const [mode, setMode] = useState<Mode>(getInitialMode);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -61,8 +63,8 @@ export function CaptureInput({ autoFocus, placeholder, onDone, viewTitle, taskCo
 
   const hint =
     mode === "enter"
-      ? "Enter erfasst · Shift+Enter neue Zeile"
-      : "Shift+Enter erfasst · Enter neue Zeile";
+      ? t("capture.hintEnter")
+      : t("capture.hintShiftEnter");
 
   return (
     <form
@@ -77,7 +79,7 @@ export function CaptureInput({ autoFocus, placeholder, onDone, viewTitle, taskCo
         value={text}
         onChange={(e) => setText(e.target.value)}
         onKeyDown={onKeyDown}
-        placeholder={placeholder ?? "Was ist zu tun? (Enter erfasst · #Kategorie · Zeilen für mehrere Tasks)"}
+        placeholder={placeholder ?? t("capture.placeholder")}
         rows={3}
         className="input resize-none"
       />
@@ -93,9 +95,9 @@ export function CaptureInput({ autoFocus, placeholder, onDone, viewTitle, taskCo
             type="button"
             onClick={() => setMode(mode === "enter" ? "shift-enter" : "enter")}
             className="rounded border border-stone-300 px-2 py-0.5 hover:bg-stone-100 dark:border-stone-600 dark:hover:bg-stone-800"
-            title="Erfassungs-Tastatur-Verhalten umschalten"
+            title={t("capture.modeToggleTitle")}
           >
-            {mode === "enter" ? "⏎ Enter erfasst" : "⏎ Shift+Enter erfasst"}
+            {mode === "enter" ? t("capture.modeEnter") : t("capture.modeShiftEnter")}
           </button>
           <span>
             {text.length} / 5000
@@ -104,7 +106,7 @@ export function CaptureInput({ autoFocus, placeholder, onDone, viewTitle, taskCo
       </div>
       {capture.error && (
         <p className="mt-2 text-sm text-red-600">
-          Fehler: {(capture.error as Error).message}
+          {t("common.error", { message: (capture.error as Error).message })}
         </p>
       )}
     </form>

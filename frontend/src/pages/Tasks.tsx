@@ -12,11 +12,12 @@ import {
   startOfDay,
   startOfWeek,
 } from "date-fns";
-import { de } from "date-fns/locale";
 import clsx from "clsx";
 import { CaptureInput } from "../components/CaptureInput";
 import { TaskRow } from "../components/TaskRow";
 import { useCategories, useTasks } from "../lib/queries";
+import { useTranslation } from "react-i18next";
+import { useI18n } from "../lib/i18n";
 import type { Status } from "../lib/queries";
 
 type View =
@@ -30,21 +31,17 @@ type View =
   | "alle"
   | "erledigt";
 
-const VIEW_TITLES: Record<View, string> = {
-  heute: "Heute",
-  morgen: "Morgen",
-  woche: "Diese Woche",
-  naechste_woche: "Nächste Woche",
-  ueberfaellig: "Überfällig",
-  eingang: "Eingang",
-  pruefung: "Zur Prüfung",
-  alle: "Alle offenen",
-  erledigt: "Erledigt",
-};
-
 const isInRange = (d: Date, start: Date, end: Date): boolean => d >= start && d <= end;
 
+const VIEW_KEYS: Record<View, string> = {
+  heute: "heute", morgen: "morgen", woche: "woche", naechste_woche: "naechste_woche",
+  ueberfaellig: "ueberfaellig", eingang: "eingang", pruefung: "pruefung",
+  alle: "alle", erledigt: "erledigt",
+};
+
 export function Tasks() {
+  const { t } = useI18n();
+  const { t: tStatus } = useTranslation();
   const params = useParams<{ view?: string }>();
   const view = (params.view ?? "heute") as View;
   const [statusFilter, setStatusFilter] = useState<Status | "">("");
@@ -186,8 +183,8 @@ export function Tasks() {
     <div>
       <div className="mb-4">
         <CaptureInput
-          placeholder="Neue Aufgabe erfassen…"
-          viewTitle={VIEW_TITLES[view]}
+          placeholder={t("capture.newTaskPlaceholder")}
+          viewTitle={t(`tasks.viewTitle.${VIEW_KEYS[view]}`)}
           taskCount={filtered.length}
         />
       </div>
@@ -196,7 +193,7 @@ export function Tasks() {
         <div className="flex flex-wrap gap-2">
           <input
             type="text"
-            placeholder="🔍 Suchen…"
+            placeholder={t("capture.searchPlaceholder")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="input w-36 sm:w-48"
@@ -206,18 +203,18 @@ export function Tasks() {
             onChange={(e) => setStatusFilter(e.target.value as Status | "")}
             className="input w-auto"
           >
-            <option value="">Status: alle</option>
-            <option value="offen">Offen</option>
-            <option value="in_bearbeitung">In Bearbeitung</option>
-            <option value="wartend">Wartend</option>
-            <option value="erledigt">Erledigt</option>
+            <option value="">{t("tasks.statusAll")}</option>
+            <option value="offen">{tStatus("common.status.offen")}</option>
+            <option value="in_bearbeitung">{tStatus("common.status.in_bearbeitung")}</option>
+            <option value="wartend">{tStatus("common.status.wartend")}</option>
+            <option value="erledigt">{tStatus("common.status.erledigt")}</option>
           </select>
           <select
             value={priority}
             onChange={(e) => setPriority(e.target.value ? Number(e.target.value) : "")}
             className="input w-auto"
           >
-            <option value="">Prio: alle</option>
+            <option value="">{t("tasks.prioAll")}</option>
             <option value="1">P1</option>
             <option value="2">P2</option>
             <option value="3">P3</option>
@@ -228,7 +225,7 @@ export function Tasks() {
             onChange={(e) => setCategoryId(e.target.value ? Number(e.target.value) : "")}
             className="input w-auto max-w-[160px]"
           >
-            <option value="">Kategorie: alle</option>
+            <option value="">{t("tasks.categoryAll")}</option>
             {categories?.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.name}
@@ -240,10 +237,10 @@ export function Tasks() {
             onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
             className="input w-auto"
           >
-            <option value="due_at">Sort: Fälligkeit ↑</option>
-            <option value="priority">Sort: Priorität</option>
-            <option value="created_at">Sort: Erstelldatum ↓</option>
-            <option value="title">Sort: Titel</option>
+            <option value="due_at">{t("tasks.sortDue")}</option>
+            <option value="priority">{t("tasks.sortPriority")}</option>
+            <option value="created_at">{t("tasks.sortCreated")}</option>
+            <option value="title">{t("tasks.sortTitle")}</option>
           </select>
           <label className="flex items-center gap-1">
             <input
@@ -251,7 +248,7 @@ export function Tasks() {
               checked={showUndated}
               onChange={(e) => setShowUndated(e.target.checked)}
             />
-            <span>Ohne Fälligkeit</span>
+            <span>{t("tasks.showUndated")}</span>
           </label>
           <label className="flex items-center gap-1">
             <input
@@ -259,7 +256,7 @@ export function Tasks() {
               checked={showCompleted}
               onChange={(e) => setShowCompleted(e.target.checked)}
             />
-            <span>Erledigte</span>
+            <span>{t("tasks.showCompleted")}</span>
           </label>
         </div>
       </div>
@@ -297,9 +294,9 @@ export function Tasks() {
       )}
 
       {isLoading ? (
-        <p className="text-stone-500">Lade…</p>
+        <p className="text-stone-500">{t("common.loading")}</p>
       ) : filtered.length === 0 ? (
-        <p className="text-stone-500 italic">Keine Aufgaben.</p>
+        <p className="text-stone-500 italic">{t("tasks.noTasks")}</p>
       ) : (
         <ul className="space-y-1">
           {filtered.map((t) => (
@@ -309,20 +306,23 @@ export function Tasks() {
       )}
 
       <p className="mt-6 text-xs text-stone-500">
-        Tastatur: <kbd>⌘K</kbd> Capture · <kbd>x</kbd> erledigen · <kbd>1</kbd>-<kbd>4</kbd> Prio
+        {t("tasks.keyboardHint")} <kbd>⌘K</kbd> {t("tasks.keyboardCapture")} · <kbd>x</kbd> {t("tasks.keyboardComplete")} · <kbd>1</kbd>-<kbd>4</kbd> Prio
       </p>
     </div>
   );
 }
 
-export function dueLabel(dueAt: string | null): string | null {
-  if (!dueAt) return null;
-  const d = parseISO(dueAt);
-  const now = new Date();
-  const today = startOfDay(now);
-  if (isSameDay(d, today)) return `heute ${format(d, "HH:mm")}`;
-  if (isSameDay(d, addDays(today, 1))) return `morgen ${format(d, "HH:mm")}`;
-  if (isPast(d)) return `${format(d, "dd.MM. HH:mm")} überfällig`;
-  if (isThisWeek(d, { weekStartsOn: 1 })) return format(d, "EEE dd.MM. HH:mm", { locale: de });
-  return format(d, "dd.MM.yyyy HH:mm");
+export function useDueLabel(): (dueAt: string | null) => string | null {
+  const { t, dateLocale } = useI18n();
+  return (dueAt) => {
+    if (!dueAt) return null;
+    const d = parseISO(dueAt);
+    const now = new Date();
+    const today = startOfDay(now);
+    if (isSameDay(d, today)) return t("tasks.dueToday", { time: format(d, "HH:mm") });
+    if (isSameDay(d, addDays(today, 1))) return t("tasks.dueTomorrow", { time: format(d, "HH:mm") });
+    if (isPast(d)) return t("tasks.dueOverdue", { datetime: format(d, "dd.MM. HH:mm") });
+    if (isThisWeek(d, { weekStartsOn: 1 })) return format(d, "EEE dd.MM. HH:mm", { locale: dateLocale });
+    return format(d, "dd.MM.yyyy HH:mm");
+  };
 }

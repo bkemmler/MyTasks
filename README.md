@@ -1,36 +1,36 @@
-# MyTasks — LLM-gestützte Task-Verwaltung
+# MyTasks — LLM-powered task management
 
-Selbst gehostete Task-Anwendung (FastAPI + SQLite + React), bei der freier Text in strukturierte Tasks übersetzt wird — primär über eine lokale regelbasierte Extraktion, optional mit Ollama-Modell als Fallback.
+Self-hosted task application (FastAPI + SQLite + React) that turns free-form text into structured tasks — primarily via local rule-based extraction, with an optional Ollama model as fallback.
 
-**Version:** 0.6.0
+**Version:** 0.8.0
 
-## Voraussetzungen
+## Requirements
 
-- Debian 13 LXC oder VM (2 vCPU, 2 GB RAM, 16 GB Disk)
+- Debian 13 LXC or VM (2 vCPU, 2 GB RAM, 16 GB disk)
 - Python 3.13, Node.js 20
-- Ollama (optional — ohne LLM läuft die lokale Extraktion weiter)
-- Root-Rechte für die Installation
+- Ollama (optional — without it, local extraction keeps working)
+- Root privileges for installation
 
 ## Installation
 
 ```bash
-# 1. ZIP entpacken
+# 1. Unzip
 unzip MyTasks.zip && cd MyTasks
 
-# 2. Installieren (mit Remote-Ollama)
-sudo ./install.sh --ollama-url http://dein-ollama-server:11434
+# 2. Install (with remote Ollama)
+sudo ./install.sh --ollama-url http://your-ollama-server:11434
 
-# ODER: Mit lokalem Ollama
+# OR: with local Ollama
 sudo ./install.sh --install-ollama
 
-# ODER: Ohne LLM (nur lokale Extraktion, LLM später in der App aktivieren)
+# OR: without LLM (local extraction only; enable LLM later in the app)
 sudo ./install.sh
 
-# 3. Im Browser öffnen
+# 3. Open in browser
 # http://<server-ip>:5000/
 ```
 
-Der Installer legt einen Admin-Nutzer interaktiv an.
+The installer creates an admin user interactively.
 
 ## Update
 
@@ -39,60 +39,71 @@ cd MyTasks
 sudo ./update.sh
 ```
 
-Synchronisiert den kompletten Code-Stand (alle Änderungen seit dem letzten Update in einem Lauf), baut Frontend neu, führt DB-Migrationen aus, erstellt vorher ein Datenbank-Backup und startet die Dienste neu. Die Versionsnummer wird via Git gepflegt; optional mit `--bump patch|minor|major` erhöhen.
+Syncs the complete code state (all changes since the last update in one run), rebuilds the frontend, runs DB migrations, creates a database backup beforehand and restarts the services. The version number is maintained via Git; optionally increment with `--bump patch|minor|major`.
 
-## Konfiguration
+## Configuration
 
-Alle Einstellungen in `/etc/tasks/tasks.env`:
+All settings live in `/etc/tasks/tasks.env`:
 
-| Variable | Beschreibung |
+| Variable | Description |
 |----------|-------------|
-| `TASKS_BIND_PORT` | HTTP-Port (Default: `5000`) |
+| `TASKS_BIND_PORT` | HTTP port (default: `5000`) |
 
-LLM und E-Mail werden **pro Nutzer** in der App unter **Einstellungen** konfiguriert:
+LLM and email are configured **per user** in the app under **Settings**:
 
-- **KI-Assistent (LLM):** Ollama-Base-URL + Modell (per Verbindungstest als Dropdown). Optional — ohne Konfiguration läuft die Extraktion rein lokal (~1 ms). Bei unsicherer lokaler Erkennung wird das LLM als Fallback genutzt.
-- **E-Mail-Versand:** Eigene SMTP-Zugangsdaten für Test-Emails und die tägliche Zusammenfassung. Passwort wird verschlüsselt gespeichert. Ohne Konfiguration keine E-Mails.
+- **AI assistant (LLM):** Ollama base URL + model (offered as a dropdown after connection test). Optional — without configuration, extraction runs fully locally (~1 ms). When local detection is unsure, the LLM is used as fallback.
+- **Email sending:** Your own SMTP credentials for test emails and the daily summary. The password is stored encrypted. Without configuration no emails are sent.
+
+### Languages
+
+The web UI is available in German and English. By default the browser language is used; a selection made via the DE/EN switch in the header is stored in a cookie. Email summaries follow the user's language choice.
 
 ## Backup & Restore
 
 ```bash
-# Tägliches Backup läuft automatisch um 03:00 via Cron.
-# Vor jedem Update wird zusätzlich ein Rolling-Backup erstellt (letzte 3).
+# Daily backup runs automatically at 03:00 via cron.
+# A rolling backup is also created before every update (last 3 kept).
 
-# Manuelles Backup:
+# Manual backup:
 /opt/tasks/deploy/backup.sh
 
 # Restore:
 sudo /opt/tasks/deploy/restore.sh /var/lib/tasks/backups/daily/tasks-YYYYMMDD.db
 ```
 
-## Deinstallation
+## Uninstall
 
 ```bash
 sudo ./uninstall.sh
-# Datenbank wird zur Sicherheit gesichert
+# Database is backed up for safety
 ```
 
-## Architektur
+## Architecture
 
 ```
 Browser → http://server:5000/
          ├── FastAPI REST API (/api/v1/)
          ├── React SPA + PWA (static files)
-         └── SSE (/api/v1/events) — Echtzeit-Updates
+         └── SSE (/api/v1/events) — real-time updates
 
-Task-Pipeline → Lokale Extraktion (regelbasiert, ~1 ms)
-              → Ollama HTTP als Fallback bei niedriger Confidence (optional)
+Task pipeline → Local extraction (rule-based, ~1 ms)
+              → Ollama HTTP as fallback when confidence is low (optional)
 
-Worker (systemd) → Scheduler (Zusammenfassungen, Wiederholungen)
+Worker (systemd) → Scheduler (summaries, recurring tasks)
                  → SQLite (WAL)
-                 → Pro-Nutzer-SMTP → E-Mail-Versand
+                 → Per-user SMTP → email delivery
 ```
 
-## Datenbank
+## Recurring tasks
 
-SQLite mit WAL-Modus. Ort: `/var/lib/tasks/tasks.db`. Schema-Migrationen laufen beim Start automatisch (`init_db`).
+Recurring tasks are supported daily/weekly/monthly/yearly:
+- Detected from text while capturing ("every monday", "daily", "every 2 weeks", "monthly on the 1st.")
+- Editable per task in the detail view via a dropdown
+- On completion, the next instance is created automatically
+
+## Database
+
+SQLite with WAL mode. Location: `/var/lib/tasks/tasks.db`. Schema migrations run automatically at startup (`init_db`).
 
 ## Logs
 

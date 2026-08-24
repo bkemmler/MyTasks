@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useI18n } from "../lib/i18n";
 import { api } from "../lib/api";
 
 interface MailConfig {
@@ -35,6 +36,7 @@ const TIMEZONES = [
 ];
 
 export function Settings() {
+  const { t } = useI18n();
   const [me, setMe] = useState<Me | null>(null);
   const [profileMsg, setProfileMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [savingProfile, setSavingProfile] = useState(false);
@@ -71,9 +73,9 @@ export function Settings() {
           daily_summary_time: summaryTime,
         }),
       });
-      setProfileMsg({ ok: true, text: "Profil gespeichert." });
+      setProfileMsg({ ok: true, text: t("settings.profileSaved") });
     } catch (e) {
-      setProfileMsg({ ok: false, text: `Speichern fehlgeschlagen: ${e}` });
+      setProfileMsg({ ok: false, text: t("common.error", { message: String(e) }) });
     } finally {
       setSavingProfile(false);
     }
@@ -81,26 +83,26 @@ export function Settings() {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-bold">Einstellungen</h2>
+      <h2 className="text-xl font-bold">{t("settings.heading")}</h2>
 
       <section className="rounded-lg border border-stone-200 p-4 dark:border-stone-800">
-        <h3 className="mb-1 font-semibold">Profil</h3>
+        <h3 className="mb-1 font-semibold">{t("settings.profileHeading")}</h3>
         <p className="mb-4 text-xs text-stone-500">
-          Angemeldet als <strong>{me?.username}</strong>
+          {t("settings.loggedInAs")} <strong>{me?.username}</strong>
         </p>
         <div className="grid gap-3 sm:grid-cols-2">
           <div>
-            <label className="mb-1 block text-xs text-stone-500">Anzeigename</label>
+            <label className="mb-1 block text-xs text-stone-500">{t("settings.displayName")}</label>
             <input
               className="input"
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
-              placeholder="optional"
+              placeholder={t("settings.optional")}
             />
           </div>
           <div>
             <label className="mb-1 block text-xs text-stone-500">
-              E-Mail (Empfänger der Zusammenfassung)
+              {t("settings.email")}
             </label>
             <input
               className="input"
@@ -111,7 +113,7 @@ export function Settings() {
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-stone-500">Zeitzone</label>
+            <label className="mb-1 block text-xs text-stone-500">{t("settings.timezone")}</label>
             <select className="input" value={timezone} onChange={(e) => setTimezone(e.target.value)}>
               {TIMEZONES.map((tz) => (
                 <option key={tz} value={tz}>{tz}</option>
@@ -120,7 +122,7 @@ export function Settings() {
           </div>
         </div>
 
-        <h4 className="mt-4 mb-2 text-sm font-medium">Tägliche Zusammenfassung</h4>
+        <h4 className="mt-4 mb-2 text-sm font-medium">{t("settings.summaryHeading")}</h4>
         <div className="flex flex-wrap items-end gap-3">
           <label className="flex items-center gap-2 text-sm">
             <input
@@ -128,10 +130,10 @@ export function Settings() {
               checked={summaryEnabled}
               onChange={(e) => setSummaryEnabled(e.target.checked)}
             />
-            Aktiv
+            {t("settings.active")}
           </label>
           <div>
-            <label className="mb-1 block text-xs text-stone-500">Uhrzeit</label>
+            <label className="mb-1 block text-xs text-stone-500">{t("settings.time")}</label>
             <input
               className="input w-28"
               type="time"
@@ -144,7 +146,7 @@ export function Settings() {
 
         <div className="mt-4">
           <button onClick={saveProfile} disabled={savingProfile} className="btn-primary text-sm">
-            {savingProfile ? "Speichern…" : "Profil speichern"}
+            {savingProfile ? t("common.saving") : t("common.save")}
           </button>
         </div>
         {profileMsg && (
@@ -161,6 +163,7 @@ export function Settings() {
 }
 
 function LLMSection() {
+  const { t } = useI18n();
   const [cfg, setCfg] = useState<LLMConfig | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [baseUrl, setBaseUrl] = useState("http://");
@@ -191,16 +194,16 @@ function LLMSection() {
       );
       if (res.success) {
         setModels(res.models);
-        setMessage({ ok: true, text: `Verbindung OK — ${res.models.length} Modelle verfügbar.` });
+        setMessage({ ok: true, text: t("settings.connOk", { count: res.models.length }) });
       } else {
         setModels([]);
         setMessage({
           ok: false,
-          text: `Verbindung fehlgeschlagen${res.detail ? `: ${res.detail}` : ""}. Freitexteingabe möglich.`,
+          text: t("settings.connFailed", { detail: res.detail ? `: ${res.detail}` : "" }),
         });
       }
     } catch (e) {
-      setMessage({ ok: false, text: `Test fehlgeschlagen: ${(e as Error).message}` });
+      setMessage({ ok: false, text: t("common.error", { message: (e as Error).message }) });
     } finally {
       setTesting(false);
     }
@@ -208,7 +211,7 @@ function LLMSection() {
 
   const save = async () => {
     if (!baseUrl) {
-      setMessage({ ok: false, text: "Base-URL ist Pflicht." });
+      setMessage({ ok: false, text: t("settings.baseUrlRequired") });
       return;
     }
     setSaving(true);
@@ -222,25 +225,25 @@ function LLMSection() {
       setMessage({
         ok: true,
         text: res.enabled
-          ? `KI-Assistent aktiviert (${res.ollama_model}).`
-          : "Gespeichert — KI-Assistent deaktiviert (nur lokale Extraktion).",
+          ? t("settings.llmSavedActive", { model: res.ollama_model })
+          : t("settings.llmSavedInactive"),
       });
     } catch (e) {
-      setMessage({ ok: false, text: `Speichern fehlgeschlagen: ${(e as Error).message}` });
+      setMessage({ ok: false, text: t("common.error", { message: (e as Error).message }) });
     } finally {
       setSaving(false);
     }
   };
 
   const remove = async () => {
-    if (!confirm("LLM-Konfiguration löschen? Nur lokale Extraktion wird verwendet.")) return;
+    if (!confirm(t("settings.llmDeleteConfirm"))) return;
     try {
       await api("/auth/me/llm-config", { method: "DELETE" });
       setCfg(null);
       setModels([]);
-      setMessage({ ok: true, text: "Konfiguration gelöscht." });
+      setMessage({ ok: true, text: t("settings.mailDeleted") });
     } catch (e) {
-      setMessage({ ok: false, text: `Löschen fehlgeschlagen: ${(e as Error).message}` });
+      setMessage({ ok: false, text: t("common.error", { message: (e as Error).message }) });
     }
   };
 
@@ -249,20 +252,18 @@ function LLMSection() {
   return (
     <section className="rounded-lg border border-stone-200 p-4 dark:border-stone-800">
       <div className="mb-1 flex items-center justify-between">
-        <h3 className="font-semibold">KI-Assistent (LLM)</h3>
+        <h3 className="font-semibold">{t("settings.llmHeading")}</h3>
         <span className={`text-xs ${cfg?.enabled ? "text-green-600" : "text-stone-400"}`}>
-          {cfg?.enabled ? "aktiv" : "inaktiv"}
+          {cfg?.enabled ? t("settings.llmActive") : t("settings.llmInactive")}
         </span>
       </div>
       <p className="mb-4 text-xs text-stone-500">
-        Optionaler Ollama-Server als Fallback, wenn die lokale Extraktion unsicher ist.
-        Ohne Konfiguration läuft die Erfassung rein lokal (~1 ms). Die Verbindung
-        wird pro Nutzer konfiguriert.
+{t("settings.llmHint")}
       </p>
 
       <div className="grid gap-3 sm:grid-cols-2">
         <div>
-          <label className="mb-1 block text-xs text-stone-500">Ollama Base-URL</label>
+          <label className="mb-1 block text-xs text-stone-500">{t("settings.ollamaUrl")}</label>
           <input
             className="input"
             value={baseUrl}
@@ -271,10 +272,10 @@ function LLMSection() {
           />
         </div>
         <div>
-          <label className="mb-1 block text-xs text-stone-500">Modell</label>
+          <label className="mb-1 block text-xs text-stone-500">{t("settings.model")}</label>
           {models.length > 0 ? (
             <select className="input" value={model} onChange={(e) => setModel(e.target.value)}>
-              <option value="">— deaktiviert —</option>
+              <option value="">{t("settings.modelDisabledOption")}</option>
               {models.map((m) => (
                 <option key={m} value={m}>{m}</option>
               ))}
@@ -284,7 +285,7 @@ function LLMSection() {
               className="input"
               value={model}
               onChange={(e) => setModel(e.target.value)}
-              placeholder="z. B. gemma4:e2b (leer = deaktiviert)"
+              placeholder={t("settings.modelFreeText")}
             />
           )}
         </div>
@@ -292,14 +293,14 @@ function LLMSection() {
 
       <div className="mt-4 flex flex-wrap items-center gap-2">
         <button onClick={testConnection} disabled={testing || !baseUrl} className="btn text-sm">
-          {testing ? "Prüfe…" : "Verbindung testen & Modelle laden"}
+          {testing ? t("settings.checking") : t("settings.testLoadModels")}
         </button>
         <button onClick={save} disabled={saving || !baseUrl} className="btn-primary text-sm">
-          {saving ? "Speichern…" : "Speichern"}
+          {saving ? t("common.saving") : t("common.save")}
         </button>
         {cfg && (
           <button onClick={remove} className="btn text-sm text-red-600">
-            Löschen
+            {t("common.delete")}
           </button>
         )}
       </div>
@@ -319,6 +320,7 @@ function LLMSection() {
 }
 
 function MailSection() {
+  const { t } = useI18n();
   const [cfg, setCfg] = useState<MailConfig | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [password, setPassword] = useState("");
@@ -357,7 +359,7 @@ function MailSection() {
 
   const save = async () => {
     if (!host || !fromAddress) {
-      setMessage({ ok: false, text: "Server und Absenderadresse sind Pflicht." });
+      setMessage({ ok: false, text: t("settings.requiredHostSender") });
       return;
     }
     setSaving(true);
@@ -377,7 +379,7 @@ function MailSection() {
       });
       setCfg(res);
       setPassword("");
-      setMessage({ ok: true, text: "Konfiguration gespeichert." });
+      setMessage({ ok: true, text: t("settings.mailSaved") });
     } catch (e) {
       setMessage({ ok: false, text: `Speichern fehlgeschlagen: ${e}` });
     } finally {
@@ -395,8 +397,8 @@ function MailSection() {
       );
       setMessage(
         res.success
-          ? { ok: true, text: `Test-Email an ${res.to} versendet.` }
-          : { ok: false, text: `Test fehlgeschlagen${res.detail ? `: ${res.detail}` : ""}.` },
+          ? { ok: true, text: t("settings.testSentTo", { to: res.to }) }
+          : { ok: false, text: t("settings.testFailed", { detail: res.detail ? `: ${res.detail}` : "" }) },
       );
     } catch (e) {
       setMessage({ ok: false, text: `Test fehlgeschlagen: ${e}` });
@@ -406,7 +408,7 @@ function MailSection() {
   };
 
   const remove = async () => {
-    if (!confirm("Mail-Konfiguration wirklich löschen? Keine E-Mails werden mehr versendet.")) return;
+    if (!confirm(t("settings.mailDeleteConfirm"))) return;
     try {
       await api("/auth/me/mail-config", { method: "DELETE" });
       setCfg(null);
@@ -415,7 +417,7 @@ function MailSection() {
       setPassword("");
       setFromAddress("");
       setFromName("");
-      setMessage({ ok: true, text: "Konfiguration gelöscht." });
+      setMessage({ ok: true, text: t("settings.mailDeleted") });
     } catch (e) {
       setMessage({ ok: false, text: `Löschen fehlgeschlagen: ${e}` });
     }
@@ -426,22 +428,20 @@ function MailSection() {
   return (
     <section className="rounded-lg border border-stone-200 p-4 dark:border-stone-800">
       <div className="mb-1 flex items-center justify-between">
-        <h3 className="font-semibold">E-Mail-Versand</h3>
+        <h3 className="font-semibold">{t("settings.mailHeading")}</h3>
         <span
           className={`text-xs ${cfg ? "text-green-600" : "text-stone-400"}`}
         >
-          {cfg ? "konfiguriert" : "nicht konfiguriert"}
+          {cfg ? t("settings.mailConfigured") : t("settings.mailNotConfigured")}
         </span>
       </div>
         <p className="mb-4 text-xs text-stone-500">
-          Eigene SMTP-Zugangsdaten für Test-Emails und die tägliche Zusammenfassung.
-          Ohne Konfiguration werden keine E-Mails versendet. Das Passwort wird
-          verschlüsselt gespeichert.
+{t("settings.mailHint")}
         </p>
 
         <div className="grid gap-3 sm:grid-cols-2">
           <div>
-            <label className="mb-1 block text-xs text-stone-500">SMTP-Server *</label>
+            <label className="mb-1 block text-xs text-stone-500">{t("settings.smtpHost")}</label>
             <input
               className="input"
               value={host}
@@ -450,7 +450,7 @@ function MailSection() {
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-stone-500">Port</label>
+            <label className="mb-1 block text-xs text-stone-500">{t("settings.port")}</label>
             <input
               className="input"
               type="number"
@@ -459,37 +459,37 @@ function MailSection() {
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-stone-500">Sicherheit</label>
+            <label className="mb-1 block text-xs text-stone-500">{t("settings.security")}</label>
             <select className="input" value={security} onChange={(e) => setSecurity(e.target.value)}>
-              <option value="starttls">STARTTLS</option>
-              <option value="ssl">SSL/TLS</option>
-              <option value="none">Keine</option>
+              <option value="starttls">{t("settings.secStarttls")}</option>
+              <option value="ssl">{t("settings.secSsl")}</option>
+              <option value="none">{t("settings.secNone")}</option>
             </select>
           </div>
           <div>
-            <label className="mb-1 block text-xs text-stone-500">Benutzername</label>
+            <label className="mb-1 block text-xs text-stone-500">{t("settings.smtpUsername")}</label>
             <input
               className="input"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              placeholder="optional"
+              placeholder={t("settings.optional")}
             />
           </div>
           <div>
             <label className="mb-1 block text-xs text-stone-500">
-              Passwort {cfg?.has_password && <span className="text-green-600">(gespeichert)</span>}
+              {t("settings.smtpPassword")} {cfg?.has_password && <span className="text-green-600">{t("settings.passwordStored")}</span>}
             </label>
             <input
               className="input"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder={cfg?.has_password ? "unverändert lassen" : "optional"}
+              placeholder={cfg?.has_password ? t("settings.passwordKeep") : t("settings.optional")}
               autoComplete="new-password"
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-stone-500">Absenderadresse *</label>
+            <label className="mb-1 block text-xs text-stone-500">{t("settings.fromAddress")}</label>
             <input
               className="input"
               type="email"
@@ -499,26 +499,26 @@ function MailSection() {
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-stone-500">Absendername</label>
+            <label className="mb-1 block text-xs text-stone-500">{t("settings.fromName")}</label>
             <input
               className="input"
               value={fromName}
               onChange={(e) => setFromName(e.target.value)}
-              placeholder="optional"
+              placeholder={t("settings.optional")}
             />
           </div>
         </div>
 
         <div className="mt-4 flex flex-wrap items-center gap-2">
           <button onClick={save} disabled={saving} className="btn-primary text-sm">
-            {saving ? "Speichern…" : "Speichern"}
+            {saving ? t("common.saving") : t("common.save")}
           </button>
-          <button onClick={test} disabled={testing || !cfg} className="btn text-sm" title={!cfg ? "Erst speichern" : ""}>
-            {testing ? "Sende…" : "Test-Email senden"}
+          <button onClick={test} disabled={testing || !cfg} className="btn text-sm" title={!cfg ? t("settings.firstSave") : ""}>
+            {testing ? t("settings.sending") : t("settings.testSend")}
           </button>
           {cfg && (
             <button onClick={remove} className="btn text-sm text-red-600">
-              Löschen
+              {t("common.delete")}
             </button>
           )}
         </div>

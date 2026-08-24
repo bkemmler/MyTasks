@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { format, parseISO } from "date-fns";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { api, apiRaw } from "../lib/api";
+import { useI18n } from "../lib/i18n";
 import { useUpdateTask } from "../lib/queries";
 
 type Status = "offen" | "in_bearbeitung" | "wartend" | "erledigt" | "abgebrochen";
@@ -31,15 +33,9 @@ interface Stats {
   completed_by_category: { category_id: number; count: number }[];
 }
 
-const STATUS_LABEL: Record<Status, string> = {
-  offen: "Offen",
-  in_bearbeitung: "In Bearbeitung",
-  wartend: "Wartend",
-  erledigt: "Erledigt",
-  abgebrochen: "Abgebrochen",
-};
-
 export function Reports() {
+  const { t } = useI18n();
+  const { t: tStatus } = useTranslation();
   const [view, setView] = useState<"open" | "completed">("open");
   const [days, setDays] = useState(30);
   const [statusFilter, setStatusFilter] = useState<Status | "">("");
@@ -111,22 +107,22 @@ export function Reports() {
       a.remove();
       URL.revokeObjectURL(url);
     } catch (e) {
-      setExportError(`Export fehlgeschlagen: ${(e as Error).message}`);
+      setExportError(t("reports.exportFailed", { message: (e as Error).message }));
     }
   };
 
   return (
     <div>
-      <h1 className="mb-4 text-2xl font-bold">Berichte</h1>
+      <h1 className="mb-4 text-2xl font-bold">{t("reports.heading")}</h1>
 
       {stats && (
         <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-5">
-          <Stat label="Erstellt" value={stats.created} />
-          <Stat label="Erledigt" value={stats.completed} />
-          <Stat label="Quote" value={`${Math.round(stats.completion_rate * 100)}%`} />
-          <Stat label="Überfällig" value={stats.overdue} accent="red" />
+          <Stat label={t("reports.statCreated")} value={stats.created} />
+          <Stat label={t("reports.statCompleted")} value={stats.completed} />
+          <Stat label={t("reports.statRate")} value={`${Math.round(stats.completion_rate * 100)}%`} />
+          <Stat label={t("reports.statOverdue")} value={stats.overdue} accent="red" />
           <Stat
-            label="Ø Stunden"
+            label={t("reports.statAvgHours")}
             value={stats.avg_completion_hours ?? "–"}
           />
         </div>
@@ -138,18 +134,18 @@ export function Reports() {
             onClick={() => setView("open")}
             className={`px-3 py-1.5 ${view === "open" ? "bg-blue-600 text-white" : "bg-white dark:bg-stone-800"}`}
           >
-            Offen
+            {t("reports.tabOpen")}
           </button>
           <button
             onClick={() => setView("completed")}
             className={`px-3 py-1.5 ${view === "completed" ? "bg-blue-600 text-white" : "bg-white dark:bg-stone-800"}`}
           >
-            Erledigt
+            {t("reports.tabCompleted")}
           </button>
         </div>
 
         <input
-          placeholder="🔍 Suchen…"
+          placeholder={t("capture.searchPlaceholder")}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="input w-48"
@@ -160,9 +156,9 @@ export function Reports() {
           onChange={(e) => setStatusFilter(e.target.value as Status | "")}
           className="input w-auto"
         >
-          <option value="">Alle Status</option>
-          {Object.entries(STATUS_LABEL).map(([k, v]) => (
-            <option key={k} value={k}>{v}</option>
+          <option value="">{t("reports.allStatuses")}</option>
+          {["offen", "in_bearbeitung", "wartend", "erledigt", "abgebrochen"].map((k) => (
+            <option key={k} value={k}>{tStatus(`common.status.${k}`)}</option>
           ))}
         </select>
 
@@ -171,10 +167,10 @@ export function Reports() {
           onChange={(e) => setDays(Number(e.target.value))}
           className="input w-auto"
         >
-          <option value={7}>7 Tage</option>
-          <option value={30}>30 Tage</option>
-          <option value={90}>90 Tage</option>
-          <option value={365}>1 Jahr</option>
+          <option value={7}>{t("reports.days7")}</option>
+          <option value={30}>{t("reports.days30")}</option>
+          <option value={90}>{t("reports.days90")}</option>
+          <option value={365}>{t("reports.days365")}</option>
         </select>
 
         <div className="ml-auto flex gap-2">
@@ -192,80 +188,80 @@ export function Reports() {
       )}
 
       {loading ? (
-        <p className="text-stone-500">Lade…</p>
+        <p className="text-stone-500">{t("common.loading")}</p>
       ) : filteredTasks.length === 0 ? (
-        <p className="text-stone-500 italic">Keine Aufgaben in diesem Zeitraum.</p>
+        <p className="text-stone-500 italic">{t("reports.noTasksInPeriod")}</p>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="border-b border-stone-300 bg-stone-100 text-left dark:border-stone-700 dark:bg-stone-800">
               <tr>
-                <th className="px-2 py-2">Titel</th>
-                <th className="px-2 py-2 w-20">Status</th>
-                <th className="px-2 py-2 w-16">Prio</th>
-                <th className="px-2 py-2 w-40">Fällig</th>
+                <th className="px-2 py-2">{t("reports.thTitle")}</th>
+                <th className="px-2 py-2 w-20">{t("reports.thStatus")}</th>
+                <th className="px-2 py-2 w-16">{t("reports.thPrio")}</th>
+                <th className="px-2 py-2 w-40">{t("reports.thDue")}</th>
                 {view === "completed" && (
-                  <th className="px-2 py-2 w-40">Erledigt</th>
+                  <th className="px-2 py-2 w-40">{t("reports.thCompleted")}</th>
                 )}
-                <th className="px-2 py-2 w-32">Erstellt</th>
+                <th className="px-2 py-2 w-32">{t("reports.thCreated")}</th>
               </tr>
             </thead>
             <tbody>
-              {filteredTasks.map((t) => (
+              {filteredTasks.map((task) => (
                 <tr
-                  key={t.uuid}
+                  key={task.uuid}
                   className="border-b border-stone-100 hover:bg-stone-50 dark:border-stone-800 dark:hover:bg-stone-800"
                 >
                   <td className="px-2 py-2">
                     <Link
-                      to={`/tasks/${t.uuid}`}
+                      to={`/tasks/${task.uuid}`}
                       className="text-blue-600 hover:underline"
                     >
-                      {t.title}
+                      {task.title}
                     </Link>
                   </td>
                   <td className="px-2 py-2">
-                    {t.status === "erledigt" ? (
+                    {task.status === "erledigt" ? (
                       <button
                         onClick={() =>
                           updateTask.mutate({
-                            uuid: t.uuid,
+                            uuid: task.uuid,
                             body: { status: "offen", completed_at: null },
                           })
                         }
                         className="rounded bg-green-100 px-1.5 py-0.5 text-xs text-green-700 hover:bg-green-200 dark:bg-green-900 dark:text-green-300"
                       >
-                        ↺ Offen
+                        {t("reports.reopen")}
                       </button>
                     ) : (
-                      <span className="text-stone-500">{STATUS_LABEL[t.status]}</span>
+                      <span className="text-stone-500">{tStatus(`common.status.${task.status}`)}</span>
                     )}
                   </td>
                   <td className="px-2 py-2">
                     <span
                       className={`rounded px-1.5 py-0.5 text-xs ${
-                        t.priority === 1
+                        task.priority === 1
                           ? "bg-red-100 text-red-800"
-                          : t.priority === 2
+                          : task.priority === 2
                             ? "bg-orange-100 text-orange-800"
                             : "bg-stone-100 text-stone-600"
                       }`}
                     >
-                      P{t.priority}
+                      P{task.priority}
                     </span>
                   </td>
                   <td className="px-2 py-2 text-stone-500">
-                    {t.due_at ? format(parseISO(t.due_at), "dd.MM. HH:mm") : "–"}
+                    {task.due_at ? format(parseISO(task.due_at), "dd.MM. HH:mm") : "–"}
                   </td>
                   {view === "completed" && (
                     <td className="px-2 py-2 text-stone-500">
-                      {t.completed_at
-                        ? format(parseISO(t.completed_at), "dd.MM.yyyy HH:mm")
+                      {task.completed_at
+                        ? format(parseISO(task.completed_at), "dd.MM.yyyy HH:mm")
                         : "–"}
                     </td>
                   )}
                   <td className="px-2 py-2 text-stone-500">
-                    {format(parseISO(t.created_at), "dd.MM.yyyy")}
+                    {format(parseISO(task.created_at), "dd.MM.yyyy")}
                   </td>
                 </tr>
               ))}
@@ -275,8 +271,10 @@ export function Reports() {
       )}
 
       <p className="mt-4 text-xs text-stone-500">
-        {filteredTasks.length} {filteredTasks.length === 1 ? "Aufgabe" : "Aufgaben"} · Periode: {days}{" "}
-        Tage
+        {t(filteredTasks.length === 1 ? "reports.count_one" : "reports.count_other", {
+          count: filteredTasks.length,
+          days,
+        })}
       </p>
     </div>
   );

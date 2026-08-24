@@ -159,11 +159,14 @@ async def test_smtp(
         "ueberfaellig": [{"title": "Beispiel-Task überfällig", "priority": 2, "due_at": "2026-08-08 16:00"}],
         "heute": [{"title": "Heute fällig", "priority": 3, "due_at": "2026-08-09 17:00"}],
     }
-    text = render_summary_text(fake_user, fake_tasks)
-    html = render_summary_html(fake_user, fake_tasks)
+    from app.services.i18n import t as tr
+
+    locale = admin.locale
+    text = render_summary_text(fake_user, fake_tasks, locale=locale)
+    html = render_summary_html(fake_user, fake_tasks, locale=locale)
     ok = await send_email(
         to=to_address,
-        subject="[MyTasks] Test-Email",
+        subject=tr(locale, "test.subject"),
         text_body=text,
         html_body=html,
         smtp=smtp,

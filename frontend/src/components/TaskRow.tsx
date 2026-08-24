@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from "react";
 import clsx from "clsx";
 import { addDays, format, parseISO } from "date-fns";
-import { de } from "date-fns/locale";
 import { useCategories, useCompleteTask, useConfirmReview, useDeleteTask, useReparse, useUpdateTask, type Task } from "../lib/queries";
-import { dueLabel } from "../pages/Tasks";
+import { useTranslation } from "react-i18next";
+import { useDueLabel } from "../pages/Tasks";
+import { useI18n } from "../lib/i18n";
 
 const PRIO_COLOR: Record<number, string> = {
   1: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
@@ -12,15 +13,11 @@ const PRIO_COLOR: Record<number, string> = {
   4: "bg-stone-100 text-stone-500 dark:bg-stone-800 dark:text-stone-400",
 };
 
-const STATUS_LABEL: Record<string, string> = {
-  offen: "Offen",
-  in_bearbeitung: "In Bearbeitung",
-  wartend: "Wartend",
-  erledigt: "Erledigt",
-  abgebrochen: "Abgebrochen",
-};
-
 export function TaskRow({ task, onCompleted }: { task: Task; onCompleted?: (uuid: string) => void }) {
+  const { t, dateLocale } = useI18n();
+  const { t: tStatus } = useTranslation();
+  const dueLabel = useDueLabel();
+  const recOptions = useRecurrenceOptions();
   const update = useUpdateTask();
   const complete = useCompleteTask();
   const confirmReview = useConfirmReview();
@@ -101,13 +98,13 @@ export function TaskRow({ task, onCompleted }: { task: Task; onCompleted?: (uuid
                 }}
                 className="rounded bg-green-100 px-1.5 py-0.5 text-xs text-green-700 hover:bg-green-200 dark:bg-green-900 dark:text-green-300"
               >
-                ✓ Erledigt — Rückgängig
+                {t("taskrow.undo")}
               </button>
             )}
             {task.recurrence_rule && (
               <span
                 className="rounded bg-violet-100 px-1.5 py-0.5 text-xs text-violet-700 dark:bg-violet-900 dark:text-violet-300"
-                title={`Wiederholung: ${rruleLabel(task.recurrence_rule)}`}
+                title={`${t("taskrow.recurrence")}: ${rruleLabel(task.recurrence_rule, t)}`}
               >
                 ↻
               </span>
@@ -153,7 +150,7 @@ export function TaskRow({ task, onCompleted }: { task: Task; onCompleted?: (uuid
             )}
             {task.tags.length > 0 && <span>🏷 {task.tags.join(", ")}</span>}
             {task.status !== "offen" && task.status !== "erledigt" && (
-              <span>{STATUS_LABEL[task.status]}</span>
+              <span>{tStatus(`common.status.${task.status}`)}</span>
             )}
           </div>
         </div>
@@ -191,9 +188,9 @@ export function TaskRow({ task, onCompleted }: { task: Task; onCompleted?: (uuid
             />
             {task.original_due_at && task.due_at !== task.original_due_at && (
               <div>
-                <Label>Ursprünglich fällig</Label>
+                <Label>{t("taskrow.originalDue")}</Label>
                 <div className="px-2 py-1.5 text-sm text-stone-500 line-through">
-                  {format(parseISO(task.original_due_at), "dd.MM.yyyy HH:mm", { locale: de })}
+                  {format(parseISO(task.original_due_at), "dd.MM.yyyy HH:mm", { locale: dateLocale })}
                 </div>
               </div>
             )}
@@ -210,7 +207,7 @@ export function TaskRow({ task, onCompleted }: { task: Task; onCompleted?: (uuid
                   onBlur={() => setEditing(null)}
                   className="input"
                 >
-                  {RECURRENCE_OPTIONS.map((o) => (
+                  {recOptions.map((o) => (
                     <option key={o.value} value={o.value}>{o.label}</option>
                   ))}
                 </select>
@@ -222,8 +219,8 @@ export function TaskRow({ task, onCompleted }: { task: Task; onCompleted?: (uuid
                   <span className="text-violet-500">↻</span>
                   <span className={task.recurrence_rule ? "text-violet-600" : "text-stone-400"}>
                     {task.recurrence_rule
-                      ? rruleLabel(task.recurrence_rule)
-                      : "nicht wiederkehrend"}
+                      ? rruleLabel(task.recurrence_rule, t)
+                      : t("taskrow.notRecurring")}
                   </span>
                   {task.recurrence_rule && (
                     <span className="ml-auto text-xs text-stone-400">ändern</span>
@@ -232,7 +229,7 @@ export function TaskRow({ task, onCompleted }: { task: Task; onCompleted?: (uuid
               )}
             </div>
             <div>
-              <Label>Kategorie</Label>
+              <Label>{t("taskrow.category")}</Label>
               <select
                 value={task.category_id ?? ""}
                 onChange={(e) =>
@@ -240,7 +237,7 @@ export function TaskRow({ task, onCompleted }: { task: Task; onCompleted?: (uuid
                 }
                 className="input"
               >
-                <option value="">— keine —</option>
+                <option value="">{t("taskrow.noCategory")}</option>
                 {categories?.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.name}
@@ -255,15 +252,15 @@ export function TaskRow({ task, onCompleted }: { task: Task; onCompleted?: (uuid
                 onChange={(e) => patch({ status: e.target.value as Task["status"] })}
                 className="input"
               >
-                {Object.entries(STATUS_LABEL).map(([k, v]) => (
+                {["offen", "in_bearbeitung", "wartend", "erledigt", "abgebrochen"].map((k) => (
                   <option key={k} value={k}>
-                    {v}
+                    {tStatus(`common.status.${k}`)}
                   </option>
                 ))}
               </select>
             </div>
             <div>
-              <Label>Priorität</Label>
+              <Label>{t("taskrow.priority")}</Label>
               <select
                 value={task.priority}
                 onChange={(e) => patch({ priority: Number(e.target.value) as Task["priority"] })}
@@ -276,7 +273,7 @@ export function TaskRow({ task, onCompleted }: { task: Task; onCompleted?: (uuid
               </select>
             </div>
             <div>
-              <Label>Wartet auf</Label>
+              <Label>{t("taskrow.waitingFor")}</Label>
               <DeferredInput
                 value={task.waiting_for ?? ""}
                 placeholder="—"
@@ -290,12 +287,12 @@ export function TaskRow({ task, onCompleted }: { task: Task; onCompleted?: (uuid
             </div>
           )}
           <div className="mt-3">
-            <Label>Notizen</Label>
+            <Label>{t("taskrow.notes")}</Label>
             <textarea
               className="input min-h-[3rem] resize-y"
               rows={2}
               defaultValue={task.notes ?? ""}
-              placeholder="Kommentare, Gedanken, Fortschritt…"
+              placeholder={t("taskrow.notesPlaceholder")}
               onBlur={(e) => patch({ notes: e.target.value || null })}
               onInput={(e) => {
                 const el = e.currentTarget;
@@ -311,13 +308,13 @@ export function TaskRow({ task, onCompleted }: { task: Task; onCompleted?: (uuid
           </div>
           {task.subtasks.length > 0 && (
             <div className="mt-3">
-              <Label>Subtasks</Label>
+              <Label>{t("taskrow.subtasks")}</Label>
               <SubtaskList task={task} />
             </div>
           )}
           {task.source_text && (
             <details className="mt-2 text-xs text-stone-500">
-              <summary className="cursor-pointer">Rohtext</summary>
+              <summary className="cursor-pointer">{t("taskrow.rawText")}</summary>
               <p className="mt-1 whitespace-pre-wrap rounded bg-stone-50 p-2 dark:bg-stone-800">
                 {task.source_text}
               </p>
@@ -328,18 +325,18 @@ export function TaskRow({ task, onCompleted }: { task: Task; onCompleted?: (uuid
               <button
                 onClick={() => reparse.mutate(task.uuid)}
                 className="btn text-xs"
-                title="Mit LLM neu verarbeiten"
+                title={t("taskrow.reprocessTitle")}
               >
-                ↻ Neu verarbeiten
+                {t("taskrow.reprocess")}
               </button>
             )}
             <button
               onClick={() => {
-                if (confirm("Task wirklich löschen?")) del.mutate(task.uuid);
+                if (confirm(t("taskrow.deleteConfirm"))) del.mutate(task.uuid);
               }}
               className="btn text-xs text-red-600"
             >
-              ✕ Löschen
+              {t("taskrow.deleteBtn")}
             </button>
           </div>
         </div>
@@ -375,13 +372,16 @@ function DeferredInput({
   );
 }
 
-const RECURRENCE_OPTIONS = [
-  { value: "none", label: "Keine" },
-  { value: "daily", label: "Täglich" },
-  { value: "weekly", label: "Wöchentlich" },
-  { value: "monthly", label: "Monatlich" },
-  { value: "yearly", label: "Jährlich" },
-] as const;
+function useRecurrenceOptions() {
+  const { t } = useI18n();
+  return [
+    { value: "none", label: t("taskrow.recNone") },
+    { value: "daily", label: t("taskrow.recDaily") },
+    { value: "weekly", label: t("taskrow.recWeekly") },
+    { value: "monthly", label: t("taskrow.recMonthly") },
+    { value: "yearly", label: t("taskrow.recYearly") },
+  ];
+}
 
 function _dueParts(dueIso: string | null): { weekday: string; day: number; month: number } {
   const base = dueIso ? parseISO(dueIso) : new Date();
@@ -419,7 +419,11 @@ function optionToRule(option: string, dueIso: string | null): string | null {
   }
 }
 
-function rruleLabel(rule: string): string {
+const WD_KEYS = ["MO", "TU", "WE", "TH", "FR", "SA", "SU"];
+
+type TFunc = (key: string, opts?: Record<string, unknown>) => string;
+
+function rruleLabel(rule: string, t: TFunc): string {
   try {
     const params = new URLSearchParams(
       rule.split(";").map((kv) => kv.split("=", 2)).filter((kv): kv is [string, string] => kv.length === 2),
@@ -429,48 +433,31 @@ function rruleLabel(rule: string): string {
     const byday = params.get("BYDAY");
     const bymonthday = params.get("BYMONTHDAY");
     const bymonth = params.get("BYMONTH");
-    const days: Record<string, string> = {
-      MO: "Montag", TU: "Dienstag", WE: "Mittwoch",
-      TH: "Donnerstag", FR: "Freitag", SA: "Samstag", SU: "Sonntag",
-    };
-    const months = [
-      "Januar", "Februar", "März", "April", "Mai", "Juni",
-      "Juli", "August", "September", "Oktober", "November", "Dezember",
-    ];
 
-    let label: string;
     switch (freq) {
       case "DAILY":
-        label = interval > 1 ? `Alle ${interval} Tage` : "Täglich";
-        break;
+        return interval > 1 ? t("taskrow.rruleEveryNDays", { n: interval }) : t("taskrow.rruleDaily");
       case "WEEKLY":
         if (interval > 1) {
-          label = `Alle ${interval} Wochen${byday && days[byday] ? ` (${days[byday]})` : ""}`;
-        } else if (byday && days[byday]) {
-          label = `Jeden ${days[byday]}`;
-        } else {
-          label = "Wöchentlich";
+          return byday && byday in WD_KEYS
+            ? t("taskrow.rruleEveryNWeeks", { n: interval, weekday: t(`taskrow.weekday.${byday}`) })
+            : t("taskrow.rruleEveryNWeeks", { n: interval });
         }
-        break;
+        return byday ? t("taskrow.rruleEveryWeekday", { weekday: t(`taskrow.weekday.${byday}`) }) : t("taskrow.rruleWeekly");
       case "MONTHLY":
-        if (bymonthday) {
-          label = `Am ${bymonthday}. jedes Monats`;
-        } else {
-          label = "Monatlich";
-        }
-        break;
+        return bymonthday ? t("taskrow.rruleMonthlyDay", { day: bymonthday }) : t("taskrow.rruleMonthly");
       case "YEARLY":
-        label =
-          bymonth && bymonthday
-            ? `${months[Number(bymonth) - 1] ?? ""} ${bymonthday}.`
-            : "Jährlich";
-        break;
+        return bymonth && bymonthday
+          ? t("taskrow.rruleYearlyMonthDay", {
+              month: t(`taskrow.month.${Number(bymonth) || 1}`, { defaultValue: "" }),
+              day: bymonthday,
+            }).trim()
+          : t("taskrow.rruleYearly");
       default:
-        label = "Wiederholend";
+        return t("taskrow.rruleGeneric");
     }
-    return label.trim() || "Wiederholend";
   } catch {
-    return "Wiederholend";
+    return t("taskrow.rruleGeneric");
   }
 }
 
@@ -545,6 +532,7 @@ function DateTimeField({
   onSave: (iso: string | null) => void;
   onCancel: () => void;
 }) {
+  const { t, dateLocale } = useI18n();
   const isoToLocal = (iso: string | null): string => {
     if (!iso) return "";
     const t = iso.replace("Z", "");
@@ -602,10 +590,10 @@ function DateTimeField({
             }}
             autoFocus
           />
-          <button onClick={commit} className="btn-primary text-xs" title="Speichern">
+          <button onClick={commit} className="btn-primary text-xs">
             ✓
           </button>
-          <button onClick={onCancel} className="btn text-xs" title="Abbrechen">
+          <button onClick={onCancel} className="btn text-xs">
             ✕
           </button>
         </div>
@@ -629,7 +617,7 @@ function DateTimeField({
           className="flex flex-1 items-center gap-2 rounded border border-transparent py-0.5 text-left hover:border-stone-300 dark:hover:border-stone-700"
         >
           <span className="text-stone-400">📅</span>
-          <span>{value ? format(parseISO(value), "dd.MM.yyyy HH:mm", { locale: de }) : <span className="text-stone-400">kein Datum</span>}</span>
+          <span>{value ? format(parseISO(value), "dd.MM.yyyy HH:mm", { locale: dateLocale }) : <span className="text-stone-400">{t("common.noDate")}</span>}</span>
         </button>
         <div className="flex gap-1">
           {[1, 2, 3].map((n) => (
@@ -637,7 +625,7 @@ function DateTimeField({
               key={n}
               onClick={() => shiftDays(n)}
               className="btn text-xs"
-              title={`Fälligdatum um ${n} Tag${n > 1 ? "e" : ""} verschieben`}
+              title={n > 1 ? t("taskrow.shiftDaysPlural", { n }) : t("taskrow.shiftDays", { n })}
             >
               +{n}
             </button>
@@ -646,7 +634,7 @@ function DateTimeField({
             <button
               onClick={() => onSave(null)}
               className="btn text-xs text-stone-400 hover:text-red-600"
-              title="Datum entfernen"
+              title={t("taskrow.removeDate")}
             >
               ✕
             </button>

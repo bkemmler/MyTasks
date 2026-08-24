@@ -1,9 +1,11 @@
 import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../lib/auth";
+import { useI18n } from "../lib/i18n";
 
 export function Login() {
   const { login } = useAuth();
+  const { t } = useI18n();
   const navigate = useNavigate();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -32,7 +34,7 @@ export function Login() {
       >
         <h1 className="text-2xl font-bold">MyTasks</h1>
         <div>
-          <label className="block text-sm font-medium">Nutzer</label>
+          <label className="block text-sm font-medium">{t("login.username")}</label>
           <input
             type="text"
             value={username}
@@ -43,7 +45,7 @@ export function Login() {
           />
         </div>
         <div>
-          <label className="block text-sm font-medium">Passwort</label>
+          <label className="block text-sm font-medium">{t("login.password")}</label>
           <input
             type="password"
             value={password}
@@ -58,7 +60,7 @@ export function Login() {
           disabled={loading}
           className="btn-primary w-full disabled:opacity-50"
         >
-          {loading ? "Anmelden…" : "Anmelden"}
+          {loading ? t("login.submitting") : t("login.submit")}
         </button>
       </form>
     </div>
