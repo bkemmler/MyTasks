@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { Link, NavLink, useNavigate } from "react-router-dom";
+import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../lib/auth";
 import { useHealth, useVersion } from "../lib/queries";
 import { useI18n } from "../lib/i18n";
@@ -14,8 +14,15 @@ export function Layout({ children }: { children: ReactNode }) {
   const { data: health } = useHealth();
   const { data: version } = useVersion();
   const navigate = useNavigate();
+  const location = useLocation();
   const [showCapture, setShowCapture] = useState(false);
   useSSE();
+
+  // Aktueller Task-View aus der URL (z. B. /tasks/heute → "heute")
+  const currentView = location.pathname.match(/^\/tasks\/(\w+)/)?.[1] ?? "";
+  // Umschalter zeigen immer das jeweils andere Ziel
+  const isToday = currentView === "heute";
+  const isWeek = currentView === "woche";
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -34,43 +41,19 @@ export function Layout({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen">
       <header className="border-b border-stone-200 bg-white dark:border-stone-800 dark:bg-stone-950">
-        <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-x-6 gap-y-1 px-3 py-2 sm:px-4 sm:py-3">
-          <Link to="/" className="text-lg font-bold">
+        <div className="mx-auto flex max-w-5xl items-center gap-x-4 px-3 py-2 sm:px-4">
+          <Link to="/" className="shrink-0 text-lg font-bold">
             MyTasks
           </Link>
-          <nav className="flex gap-1 overflow-x-auto pb-1 sm:pb-0">
-            <NavLink
-              to="/tasks/heute"
-              className={({ isActive }) =>
-                `tab whitespace-nowrap ${isActive ? "tab-active" : ""}`
-              }
-            >
-              {t("nav.today")}
-            </NavLink>
-            <NavLink
-              to="/tasks/morgen"
-              className={({ isActive }) =>
-                `tab whitespace-nowrap ${isActive ? "tab-active" : ""}`
-              }
-            >
-              {t("nav.tomorrow")}
-            </NavLink>
-            <NavLink
-              to="/tasks/woche"
-              className={({ isActive }) =>
-                `tab whitespace-nowrap ${isActive ? "tab-active" : ""}`
-              }
-            >
-              {t("nav.week")}
-            </NavLink>
-            <NavLink
-              to="/tasks/naechste_woche"
-              className={({ isActive }) =>
-                `tab whitespace-nowrap ${isActive ? "tab-active" : ""}`
-              }
-            >
-              {t("nav.next")}
-            </NavLink>
+          <nav className="flex min-w-0 flex-1 gap-1 overflow-x-auto">
+            {/* Umschalter Heute/Morgen: zeigt das jeweils andere Ziel */}
+            <Link to={isToday ? "/tasks/morgen" : "/tasks/heute"} className="tab whitespace-nowrap">
+              {isToday ? t("nav.tomorrow") : t("nav.today")}
+            </Link>
+            {/* Umschalter Woche/Nächste */}
+            <Link to={isWeek ? "/tasks/naechste_woche" : "/tasks/woche"} className="tab whitespace-nowrap">
+              {isWeek ? t("nav.next") : t("nav.week")}
+            </Link>
             <NavLink
               to="/tasks/eingang"
               className={({ isActive }) =>
@@ -130,9 +113,9 @@ export function Layout({ children }: { children: ReactNode }) {
               </NavLink>
             )}
           </nav>
-          <div className="ml-auto flex items-center gap-3 text-sm">
+          <div className="ml-auto flex shrink-0 items-center gap-2 text-sm sm:gap-3">
             <span
-              className={`h-2 w-2 rounded-full ${
+              className={`h-2 w-2 shrink-0 rounded-full ${
                 health?.ollama === "ok"
                   ? "bg-green-500"
                   : health?.ollama === "error"
@@ -147,8 +130,8 @@ export function Layout({ children }: { children: ReactNode }) {
                   : `Ollama: ${health?.ollama ?? "?"}`
               }
             />
-            <span className="text-stone-500">{user?.display_name || user?.username}</span>
-            <span className="rounded bg-stone-100 px-1.5 py-0.5 font-mono text-xs text-stone-500 dark:bg-stone-800 dark:text-stone-400">
+            <span className="hidden text-stone-500 sm:inline">{user?.display_name || user?.username}</span>
+            <span className="hidden rounded bg-stone-100 px-1.5 py-0.5 font-mono text-xs text-stone-500 dark:bg-stone-800 dark:text-stone-400 md:inline">
               v{version?.app ?? "?"}
             </span>
             <div className="flex overflow-hidden rounded border border-stone-300 text-xs dark:border-stone-600">
