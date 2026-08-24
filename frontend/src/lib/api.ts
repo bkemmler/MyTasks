@@ -89,3 +89,30 @@ export async function api<T>(
   if (resp.status === 204) return undefined as T;
   return resp.json();
 }
+
+export async function apiRaw(path: string): Promise<Response> {
+  const doFetch = async (): Promise<Response> => {
+    const access = getAccessToken();
+    const headers = new Headers();
+    if (access) headers.set("Authorization", `Bearer ${access}`);
+    return fetch(`/api/v1${path}`, { headers });
+  };
+
+  let resp = await doFetch();
+  if (resp.status === 401 && getRefreshToken()) {
+    const ok = await tryRefresh();
+    if (ok) resp = await doFetch();
+  }
+
+  if (!resp.ok) {
+    let detail = resp.statusText;
+    try {
+      const body = await resp.json();
+      detail = body.detail || body.title || detail;
+    } catch {
+      // ignore
+    }
+    throw new ApiError(resp.status, detail);
+  }
+  return resp;
+}

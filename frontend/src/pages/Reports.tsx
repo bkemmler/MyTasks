@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { format, parseISO } from "date-fns";
 import { Link } from "react-router-dom";
-import { api } from "../lib/api";
+import { api, apiRaw } from "../lib/api";
 import { useUpdateTask } from "../lib/queries";
 
 type Status = "offen" | "in_bearbeitung" | "wartend" | "erledigt" | "abgebrochen";
@@ -93,11 +93,26 @@ export function Reports() {
     reload();
   }, [params, days]);
 
-  const exportCsv = () => {
-    window.open(`/api/v1/reports/export?format=csv&${params}`, "_blank");
-  };
-  const exportJson = () => {
-    window.open(`/api/v1/reports/export?format=json&${params}`, "_blank");
+  const [exportError, setExportError] = useState<string | null>(null);
+
+  const exportFile = async (fmt: "csv" | "json") => {
+    setExportError(null);
+    try {
+      // window.open() sendet keinen Authorization-Header → Download via
+      // fetch mit Token, Antwort als Blob, Download per <a download>.
+      const resp = await apiRaw(`/reports/export?format=${fmt}&${params}`);
+      const blob = await resp.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `MyTasks-export-${format(new Date(), "yyyyMMdd")}.${fmt}`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      setExportError(`Export fehlgeschlagen: ${(e as Error).message}`);
+    }
   };
 
   return (
@@ -163,14 +178,18 @@ export function Reports() {
         </select>
 
         <div className="ml-auto flex gap-2">
-          <button onClick={exportCsv} className="btn">
+          <button onClick={() => exportFile("csv")} className="btn">
             📥 CSV
           </button>
-          <button onClick={exportJson} className="btn">
+          <button onClick={() => exportFile("json")} className="btn">
             📥 JSON
           </button>
         </div>
       </div>
+
+      {exportError && (
+        <p className="mb-2 text-sm text-red-600">{exportError}</p>
+      )}
 
       {loading ? (
         <p className="text-stone-500">Lade…</p>
