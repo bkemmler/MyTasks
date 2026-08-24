@@ -122,3 +122,66 @@ class TestDateExtract:
         from app.services.date_extract import find_date_phrase
         phrase, _ = find_date_phrase("irgendwas ohne datum")
         assert phrase is None
+
+
+class TestDatePhraseResolution:
+    """Regressionstests für die Spannen-basierte Datums-/Zeit-Erkennung."""
+
+    from datetime import datetime
+
+    NOW = datetime(2026, 8, 24, 10, 0)  # Montag, 24.08.2026
+
+    def _resolve(self, text: str):
+        r = local_extract(text)
+        return r["due_at"], r["due_is_all_day"], r["title"]
+
+    def test_morgen_mit_uhrzeit(self):
+        due, all_day, title = self._resolve("Müller anrufen morgen um 8")
+        assert due is not None
+        assert due.startswith("2026-08-25T08:00")
+        assert all_day is False
+        assert title == "Müller anrufen"
+
+    def test_morgen_mit_minuten(self):
+        due, all_day, _ = self._resolve("Meeting morgen 14:30")
+        assert due.startswith("2026-08-25T14:30")
+        assert all_day is False
+
+    def test_naechste_woche_samstag(self):
+        due, _, _ = self._resolve("Bericht nächste woche samstag fertigstellen")
+        # Montag 24.08. → Samstag nächster Woche = 05.09. (nicht 29.08.)
+        assert due.startswith("2026-09-05T17:00")
+
+    def test_wochentag_mit_zeit(self):
+        due, all_day, title = self._resolve("Zahnarzt am Freitag um 9:30")
+        assert due.startswith("2026-08-28T09:30")
+        assert all_day is False
+        assert title == "Zahnarzt"
+
+    def test_ende_des_monats(self):
+        due, _, _ = self._resolve("Steuererklärung bis ende des monats")
+        assert due.startswith("2026-08-31T17:00")
+
+    def test_uebermorgen_uhr(self):
+        due, _, _ = self._resolve("Teammeeting übermorgen 10 uhr")
+        assert due.startswith("2026-08-26T10:00")
+        assert due != "2026-08-10"[:10] + "T17:00:00"
+
+    def test_in_n_tagen(self):
+        due, _, title = self._resolve("Kaffee in 3 tagen mit Anna trinken")
+        assert due.startswith("2026-08-27T17:00")
+        assert "in 3 tagen" not in title.lower()
+
+    def test_ende_der_woche(self):
+        due, _, _ = self._resolve("Abgabe ende der woche")
+        # Freitag derselben Woche = 28.08.
+        assert due.startswith("2026-08-28T17:00")
+
+    def test_datum_mit_monatsname(self):
+        due, _, _ = self._resolve("Termin am 5. oktober 2026")
+        assert due.startswith("2026-10-05T17:00")
+
+    def test_default_time_ohne_zeitangabe(self):
+        due, all_day, _ = self._resolve("Anruf morgen")
+        assert due.startswith("2026-08-25T17:00")
+        assert all_day is True

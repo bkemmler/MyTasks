@@ -5,10 +5,13 @@
       "title": "Angebot Fa. Müller fertigstellen",
       "status": "offen",
       "priority": 2,
-      "subtasks": ["Rücksprache mit Sabine"],
-      "due_at": null,
+      "subtasks": [
+        "Rücksprache mit Sabine"
+      ],
+      "due_at": "2026-08-28T16:00:00",
       "category": null
-    }
+    },
+    "reference_date": "2026-08-24T10:00:00"
   },
   {
     "source_text": "Kalkulation Projekt Nord prüfen bis morgen",
@@ -16,8 +19,9 @@
       "title": "Kalkulation Projekt Nord prüfen",
       "status": "offen",
       "priority": 3,
-      "due_at": null
-    }
+      "due_at": "2026-08-25T17:00:00"
+    },
+    "reference_date": "2026-08-24T10:00:00"
   },
   {
     "source_text": "sofort Rückmeldung Fa. Schmitt einholen, warte schon 4 Tage",
@@ -42,9 +46,14 @@
       "title": "Präsentation vorbereiten",
       "status": "offen",
       "priority": 3,
-      "subtasks": ["Folien erstellen", "Daten aktualisieren", "Mit Team abstimmen"],
-      "due_at": null
-    }
+      "subtasks": [
+        "Folien erstellen",
+        "Daten aktualisieren",
+        "Mit Team abstimmen"
+      ],
+      "due_at": "2026-08-31T17:00:00"
+    },
+    "reference_date": "2026-08-24T10:00:00"
   },
   {
     "source_text": "jeden Montag Statusbericht schreiben",
@@ -52,8 +61,7 @@
       "title": "Statusbericht schreiben",
       "status": "offen",
       "priority": 3,
-      "recurrence_rule": null,
-      "due_at": null
+      "recurrence_rule": null
     }
   },
   {
@@ -62,8 +70,9 @@
       "title": "Rechnung 2024-081 von Meier GmbH prüfen und freigeben",
       "status": "offen",
       "priority": 3,
-      "due_at": null
-    }
+      "due_at": "2026-08-26T17:00:00"
+    },
+    "reference_date": "2026-08-24T10:00:00"
   },
   {
     "source_text": "Server-Zertifikat läuft nächste Woche Donnerstag ab - erneuern, kritisch!",
@@ -71,8 +80,9 @@
       "title": "Server-Zertifikat erneuern",
       "status": "offen",
       "priority": 1,
-      "due_at": null
-    }
+      "due_at": "2026-09-03T17:00:00"
+    },
+    "reference_date": "2026-08-24T10:00:00"
   },
   {
     "source_text": "Bewerbungsgespräch mit Kandidat Schmidt am 15. August um 10 Uhr",
@@ -80,8 +90,9 @@
       "title": "Bewerbungsgespräch mit Kandidat Schmidt",
       "status": "offen",
       "priority": 3,
-      "due_at": null
-    }
+      "due_at": "2027-08-15T10:00:00"
+    },
+    "reference_date": "2026-08-24T10:00:00"
   },
   {
     "source_text": "Steuerunterlagen für 2025 sortieren und an Steuerberater schicken, hat Zeit bis Ende des Monats",
@@ -89,8 +100,9 @@
       "title": "Steuerunterlagen für 2025 sortieren und an Steuerberater schicken",
       "status": "offen",
       "priority": 4,
-      "due_at": null
-    }
+      "due_at": "2026-08-31T17:00:00"
+    },
+    "reference_date": "2026-08-24T10:00:00"
   },
   {
     "source_text": "Mitarbeitergespräch Müller vorbereiten: Ziele Q3 prüfen, Feedback von Kollegen einholen, Gehaltsband recherchieren",
@@ -98,7 +110,11 @@
       "title": "Mitarbeitergespräch Müller vorbereiten",
       "status": "offen",
       "priority": 3,
-      "subtasks": ["Ziele Q3 prüfen", "Feedback von Kollegen einholen", "Gehaltsband recherchieren"]
+      "subtasks": [
+        "Ziele Q3 prüfen",
+        "Feedback von Kollegen einholen",
+        "Gehaltsband recherchieren"
+      ]
     }
   },
   {
@@ -107,7 +123,9 @@
       "title": "Ölwechsel Auto",
       "status": "offen",
       "priority": 1,
-      "subtasks": ["Werkstatt anrufen"]
+      "subtasks": [
+        "Werkstatt anrufen"
+      ]
     }
   },
   {
@@ -116,8 +134,9 @@
       "title": "Blogartikel über neue API-Features schreiben",
       "status": "offen",
       "priority": 3,
-      "due_at": null
-    }
+      "due_at": "2026-08-28T17:00:00"
+    },
+    "reference_date": "2026-08-24T10:00:00"
   },
   {
     "source_text": "Lieferant Meier warte auf Angebot seit einer Woche",
@@ -134,8 +153,9 @@
       "title": "Wohnung putzen",
       "status": "offen",
       "priority": 4,
-      "due_at": null
-    }
+      "due_at": "2026-08-29T17:00:00"
+    },
+    "reference_date": "2026-08-24T10:00:00"
   },
   {
     "source_text": "Vertrag mit Kunde XYZ finalisieren, muss bis Ende der Woche raus, höchste Priorität",
@@ -143,8 +163,9 @@
       "title": "Vertrag mit Kunde XYZ finalisieren",
       "status": "offen",
       "priority": 1,
-      "due_at": null
-    }
+      "due_at": "2026-08-28T17:00:00"
+    },
+    "reference_date": "2026-08-24T10:00:00"
   },
   {
     "source_text": "Geburtstagsgeschenk für Lisa besorgen, bis Dienstag",
@@ -152,8 +173,9 @@
       "title": "Geburtstagsgeschenk für Lisa besorgen",
       "status": "offen",
       "priority": 3,
-      "due_at": null
-    }
+      "due_at": "2026-08-25T17:00:00"
+    },
+    "reference_date": "2026-08-24T10:00:00"
   },
   {
     "source_text": "Datenbank-Backup prüfen, läuft das automatisch? Nachsehen im Monitoring",
@@ -161,7 +183,9 @@
       "title": "Datenbank-Backup prüfen",
       "status": "offen",
       "priority": 3,
-      "subtasks": ["Monitoring nachsehen"]
+      "subtasks": [
+        "Monitoring nachsehen"
+      ]
     }
   },
   {
@@ -170,7 +194,10 @@
       "title": "Firmenlauf anmelden",
       "status": "offen",
       "priority": 3,
-      "subtasks": ["Startgeld überweisen", "Team-T-Shirts bestellen"]
+      "subtasks": [
+        "Startgeld überweisen",
+        "Team-T-Shirts bestellen"
+      ]
     }
   },
   {
@@ -179,8 +206,9 @@
       "title": "Telefonat mit Rechtsanwalt Dr. Weber",
       "status": "offen",
       "priority": 2,
-      "due_at": null
-    }
+      "due_at": "2026-08-25T09:30:00"
+    },
+    "reference_date": "2026-08-24T10:00:00"
   },
   {
     "source_text": "E-Mail an alle Mitarbeiter: Neue Parkregelung ab 1. Oktober",
@@ -196,7 +224,9 @@
       "title": "Defekten Drucker im 2. Stock reparieren lassen",
       "status": "offen",
       "priority": 3,
-      "subtasks": ["Bei IT melden"]
+      "subtasks": [
+        "Bei IT melden"
+      ]
     }
   },
   {
@@ -205,7 +235,11 @@
       "title": "Jahresabschluss 2025 vorbereiten",
       "status": "offen",
       "priority": 3,
-      "subtasks": ["Unterlagen von Buchhaltung anfordern", "Bilanz prüfen", "GuV erstellen"]
+      "subtasks": [
+        "Unterlagen von Buchhaltung anfordern",
+        "Bilanz prüfen",
+        "GuV erstellen"
+      ]
     }
   },
   {
@@ -214,7 +248,9 @@
       "title": "Termin mit Zulieferer finden",
       "status": "offen",
       "priority": 3,
-      "subtasks": ["Doodle-Umfrage starten"]
+      "subtasks": [
+        "Doodle-Umfrage starten"
+      ]
     }
   },
   {
@@ -223,7 +259,10 @@
       "title": "Meeting-Notizen vom 5.8. ins Wiki stellen",
       "status": "offen",
       "priority": 3,
-      "subtasks": ["Teilnehmerliste ergänzen", "Action Items markieren"]
+      "subtasks": [
+        "Teilnehmerliste ergänzen",
+        "Action Items markieren"
+      ]
     }
   },
   {
@@ -232,7 +271,9 @@
       "title": "Sicherheitsupdate auf allen Servern einspielen",
       "status": "offen",
       "priority": 2,
-      "subtasks": ["Backup machen"]
+      "subtasks": [
+        "Backup machen"
+      ]
     }
   },
   {
@@ -241,9 +282,13 @@
       "title": "Projektangebot für Ausschreibung 2026-07 schreiben",
       "status": "offen",
       "priority": 2,
-      "due_at": null,
-      "subtasks": ["Referenzen zusammenstellen", "Preiskalkulation machen"]
-    }
+      "due_at": "2027-08-20T17:00:00",
+      "subtasks": [
+        "Referenzen zusammenstellen",
+        "Preiskalkulation machen"
+      ]
+    },
+    "reference_date": "2026-08-24T10:00:00"
   },
   {
     "source_text": "Büropflanzen gießen",
@@ -301,7 +346,9 @@
       "title": "Lieferantenvertrag mit Händler AG prüfen",
       "status": "offen",
       "priority": 2,
-      "subtasks": ["Anwalt einschalten"]
+      "subtasks": [
+        "Anwalt einschalten"
+      ]
     }
   },
   {
@@ -318,7 +365,9 @@
       "title": "Heizung warten lassen",
       "status": "offen",
       "priority": 3,
-      "subtasks": ["Handwerker kontaktieren"]
+      "subtasks": [
+        "Handwerker kontaktieren"
+      ]
     }
   },
   {
@@ -343,7 +392,12 @@
       "title": "Messeplanung für Hannover",
       "status": "offen",
       "priority": 4,
-      "subtasks": ["Stand buchen", "Flyer drucken", "Give-aways bestellen", "Hotels für Team"]
+      "subtasks": [
+        "Stand buchen",
+        "Flyer drucken",
+        "Give-aways bestellen",
+        "Hotels für Team"
+      ]
     }
   },
   {
@@ -352,7 +406,11 @@
       "title": "Neuen Mitarbeiter Onboarding vorbereiten",
       "status": "offen",
       "priority": 3,
-      "subtasks": ["Laptop bestellen", "Accounts anlegen", "Zugangskarte"]
+      "subtasks": [
+        "Laptop bestellen",
+        "Accounts anlegen",
+        "Zugangskarte"
+      ]
     }
   },
   {
@@ -393,7 +451,11 @@
       "title": "Betriebsversammlung organisieren",
       "status": "offen",
       "priority": 3,
-      "subtasks": ["Raum buchen", "Catering", "Agenda mit BR abstimmen"]
+      "subtasks": [
+        "Raum buchen",
+        "Catering",
+        "Agenda mit BR abstimmen"
+      ]
     }
   },
   {
@@ -418,7 +480,12 @@
       "title": "Sommerfest planen",
       "status": "offen",
       "priority": 4,
-      "subtasks": ["Datum finden", "Location anfragen", "Budget klären", "Einladung schreiben"]
+      "subtasks": [
+        "Datum finden",
+        "Location anfragen",
+        "Budget klären",
+        "Einladung schreiben"
+      ]
     }
   },
   {
@@ -427,7 +494,9 @@
       "title": "Zahlungseingang von Kunde Nord prüfen",
       "status": "offen",
       "priority": 2,
-      "subtasks": ["Mahnung vorbereiten falls nicht bezahlt"]
+      "subtasks": [
+        "Mahnung vorbereiten falls nicht bezahlt"
+      ]
     }
   },
   {
@@ -436,7 +505,10 @@
       "title": "Hardware-Inventur machen",
       "status": "offen",
       "priority": 4,
-      "subtasks": ["Alle Arbeitsplätze durchgehen", "Liste aktualisieren"]
+      "subtasks": [
+        "Alle Arbeitsplätze durchgehen",
+        "Liste aktualisieren"
+      ]
     }
   }
 ]

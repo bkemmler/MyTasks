@@ -64,7 +64,7 @@ async def build_summary_for_user(
     for k in sections:
         sections[k].sort(key=lambda x: (x["priority"], x.get("due_at") or ""))
 
-    llm_einordnung = await _maybe_llm_einordnung(sections, user)
+    llm_einordnung = await _maybe_llm_einordnung(db, sections, user)
     if llm_einordnung:
         sections["llm_einordnung"] = llm_einordnung
 
@@ -75,15 +75,17 @@ async def build_summary_for_user(
 
 
 async def _maybe_llm_einordnung(
-    sections: dict[str, list[dict]], user: User
+    db: AsyncSession, sections: dict[str, list[dict]], user: User
 ) -> str | None:
-    """Wenn der Nutzer ein LLM aktiviert hat, ergänzt eine kurze Einordnung."""
+    """Wenn der Nutzer eine LLM-Konfiguration hinterlegt hat, ergänzt eine kurze Einordnung."""
     if user.daily_summary_enabled is False and not sections.get("heute") and not sections.get("ueberfaellig"):
         return None
-    try:
-        from app.core.config import settings
 
-        if not settings.ollama_model:
+    try:
+        from app.services.user_llm import get_llm_config
+
+        llm_cfg = await get_llm_config(db, user)
+        if llm_cfg is None:
             return None
 
         lines = []
@@ -109,9 +111,9 @@ async def _maybe_llm_einordnung(
 
         async with httpx.AsyncClient(timeout=30) as http:
             r = await http.post(
-                f"{settings.ollama_base_url}/api/chat",
+                f"{llm_cfg.base_url}/api/chat",
                 json={
-                    "model": settings.ollama_model,
+                    "model": llm_cfg.model,
                     "messages": [{"role": "user", "content": prompt}],
                     "format": {"type": "object", "properties": {"text": {"type": "string"}}, "required": ["text"]},
                     "stream": False,

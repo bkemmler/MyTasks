@@ -135,9 +135,13 @@ export function Layout({ children }: { children: ReactNode }) {
                     ? "bg-red-500"
                     : health?.ollama === "disabled"
                       ? "bg-stone-300"
-                      : "bg-stone-400"
+                      : "bg-sky-400"
               }`}
-              title={`Ollama: ${health?.ollama ?? "?"}`}
+              title={
+                health?.ollama === "per-user"
+                  ? "LLM: pro Nutzer konfiguriert (Einstellungen)"
+                  : `Ollama: ${health?.ollama ?? "?"}`
+              }
             />
             <span className="text-stone-500">{user?.display_name || user?.username}</span>
             <span className="rounded bg-stone-100 px-1.5 py-0.5 font-mono text-xs text-stone-500 dark:bg-stone-800 dark:text-stone-400">

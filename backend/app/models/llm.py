@@ -82,3 +82,21 @@ class Prompt(Base):
     created_by: Mapped[int | None] = mapped_column(
         Integer, ForeignKey("users.id")
     )
+
+
+class UserLLMConfig(Base):
+    """Pro-Nutzer-Ollama-Konfiguration.
+
+    ollama_model leer = LLM deaktiviert (nur lokale Extraktion).
+    Kein globaler Fallback mehr — TASKS_OLLAMA_MODEL ist obsolet.
+    """
+
+    __tablename__ = "user_llm_configs"
+
+    user_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), primary_key=True
+    )
+    ollama_base_url: Mapped[str] = mapped_column(
+        String(255), default="http://localhost:11434", nullable=False
+    )
+    ollama_model: Mapped[str] = mapped_column(String(255), default="", nullable=False)

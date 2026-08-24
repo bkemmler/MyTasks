@@ -178,11 +178,7 @@ if curl -sf "$OLLAMA_BASE_URL/api/tags" >/dev/null 2>&1; then
     fi
 else
     warn "Ollama nicht erreichbar: $OLLAMA_BASE_URL"
-    if [[ "$INSTALL_OLLAMA" != "true" ]]; then
-        fail "Remote-Ollama unter $OLLAMA_BASE_URL nicht erreichbar. URL prüfen oder --install-ollama für lokale Installation."
-    else
-        warn "Lokale Installation aktiv — Service startet möglicherweise noch. Fortsetzung."
-    fi
+    warn "LLM ist optional und wird pro Nutzer in der App konfiguriert (Einstellungen → KI-Assistent). Installation läuft weiter."
 fi
 
 # ── 4. Systembenutzer und Verzeichnisse ────────────────────────────────
@@ -304,8 +300,6 @@ TASKS_BIND_HOST=0.0.0.0
 TASKS_BIND_PORT=5000
 TASKS_LOG_LEVEL=INFO
 TASKS_SECRET_KEY_FILE=$ETC_DIR/secret.key
-TASKS_OLLAMA_BASE_URL=$OLLAMA_BASE_URL
-TASKS_OLLAMA_MODEL=$OLLAMA_MODEL
 TASKS_APP_VERSION=$APP_VERSION
 TASKS_RATE_LIMIT_ENABLED=true
 TASKS_WORKER_ENABLED=true

@@ -5,8 +5,6 @@ import re
 from datetime import UTC, datetime
 from typing import Any
 
-import dateparser
-
 logger = logging.getLogger(__name__)
 
 
@@ -173,8 +171,17 @@ def _clean_title(text: str, due_phrase: str | None) -> str:
     cleaned = TAG_RE.sub("", cleaned)
 
     if due_phrase:
-        cleaned = cleaned.replace(due_phrase, "")
+        cleaned = cleaned.replace(due_phrase, " ")
 
+    # Übrig gebliebene Konnektoren am Ende entfernen ("Zahnarzt am")
+    cleaned = re.sub(
+        r"\s+(?:am|um|ab|bis|zur|zum|in|nächste[nr]?|kommende[nr]?|diese[ns]?)\s*$",
+        "",
+        cleaned,
+        flags=re.IGNORECASE,
+    )
+
+    cleaned = re.sub(r"\s{2,}", " ", cleaned)
     cleaned = re.sub(
         r"\s+(?:bitte|sofort|dringend|wichtig|bei gelegenheit|heute|morgen|übermorgen|nächste[nr]? woche|bis (?:morgen|freitag|montag|dienstag|mittwoch|donnerstag|sonntag|samstag)|\d{1,2}\.\d{1,2}\.?|\d{1,2}:\d{2})\s*$",
         "",
@@ -196,8 +203,12 @@ def local_extract(
     source_text: str,
     default_due_time: str = "17:00",
     category_aliases: dict[str, list[str]] | None = None,
+    now: datetime | None = None,
 ) -> dict[str, Any]:
     """Regelbasierte Extraktion. Liefert ein Schema-konformes dict plus confidence.
+
+    Args:
+        now: Referenzzeitpunkt für relative Daten (Tests/Eval); Default: jetzt.
 
     Felder:
       - title: bereinigter Titel
@@ -237,7 +248,9 @@ def local_extract(
 
     text_no_url, url = _strip_urls(text)
 
-    due_at, due_phrase, due_all_day = _extract_due(text_no_url, default_due_time)
+    due_at, due_phrase, due_all_day = _extract_due(
+        text_no_url, default_due_time, now=now
+    )
 
     title = _clean_title(text_no_url, due_phrase)
     priority = _detect_priority(text_no_url)
@@ -287,27 +300,30 @@ def local_extract(
     }
 
 
-def _extract_due(text: str, default_due_time: str) -> tuple[str | None, str | None, bool]:
-    """Versucht eine Datums-Phrase zu erkennen und aufzulösen."""
-    from app.services.date_extract import find_date_phrase
+def _extract_due(
+    text: str, default_due_time: str, now: datetime | None = None
+) -> tuple[str | None, str | None, bool]:
+    """Versucht eine Datums-Phrase zu erkennen und aufzulösen.
+
+    Returns (iso_due_at, phrase, due_is_all_day).
+    Eine im Text genannte Uhrzeit ("um 8", "14:30 uhr") wird übernommen;
+    ohne Zeit gilt default_due_time und due_is_all_day=True.
+    """
+    from app.services.date_extract import find_date_phrase, resolve_phrase
 
     phrase, _end = find_date_phrase(text)
     if not phrase:
         return None, None, False
 
     try:
-        hh, mm = default_due_time.split(":")
-        settings = {
-            "RELATIVE_BASE": datetime.now(UTC).replace(tzinfo=None),
-            "PREFER_DATES_FROM": "future",
-            "PREFER_DAY_OF_MONTH": "first",
-            "TIMEZONE": "UTC",
-        }
-        parsed = dateparser.parse(phrase, languages=["de"], settings=settings)
+        parsed, explicit_time = resolve_phrase(
+            phrase,
+            now or datetime.now(UTC).replace(tzinfo=None),
+            default_time=default_due_time,
+        )
         if not parsed:
             return None, phrase, False
-        parsed = parsed.replace(hour=int(hh), minute=int(mm), second=0, microsecond=0)
-        return parsed.isoformat(), phrase, False
+        return parsed.isoformat(), phrase, not explicit_time
     except Exception:
         return None, phrase, False
 

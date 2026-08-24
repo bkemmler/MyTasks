@@ -20,6 +20,12 @@ interface Me {
   daily_summary_time: string;
 }
 
+interface LLMConfig {
+  ollama_base_url: string;
+  ollama_model: string;
+  enabled: boolean;
+}
+
 const TIMEZONES = [
   "Europe/Berlin",
   "Europe/Vienna",
@@ -149,7 +155,166 @@ export function Settings() {
       </section>
 
       <MailSection />
+      <LLMSection />
     </div>
+  );
+}
+
+function LLMSection() {
+  const [cfg, setCfg] = useState<LLMConfig | null>(null);
+  const [loaded, setLoaded] = useState(false);
+  const [baseUrl, setBaseUrl] = useState("http://");
+  const [model, setModel] = useState("");
+  const [models, setModels] = useState<string[]>([]);
+  const [saving, setSaving] = useState(false);
+  const [testing, setTesting] = useState(false);
+  const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
+
+  useEffect(() => {
+    api<LLMConfig>("/auth/me/llm-config")
+      .then((res) => {
+        setCfg(res);
+        setBaseUrl(res.ollama_base_url);
+        setModel(res.ollama_model);
+      })
+      .catch(() => setCfg(null))
+      .finally(() => setLoaded(true));
+  }, []);
+
+  const testConnection = async () => {
+    setTesting(true);
+    setMessage(null);
+    try {
+      const res = await api<{ success: boolean; models: string[]; detail?: string }>(
+        "/auth/me/llm-config/test",
+        { method: "POST", body: JSON.stringify({ ollama_base_url: baseUrl }) },
+      );
+      if (res.success) {
+        setModels(res.models);
+        setMessage({ ok: true, text: `Verbindung OK — ${res.models.length} Modelle verfügbar.` });
+      } else {
+        setModels([]);
+        setMessage({
+          ok: false,
+          text: `Verbindung fehlgeschlagen${res.detail ? `: ${res.detail}` : ""}. Freitexteingabe möglich.`,
+        });
+      }
+    } catch (e) {
+      setMessage({ ok: false, text: `Test fehlgeschlagen: ${(e as Error).message}` });
+    } finally {
+      setTesting(false);
+    }
+  };
+
+  const save = async () => {
+    if (!baseUrl) {
+      setMessage({ ok: false, text: "Base-URL ist Pflicht." });
+      return;
+    }
+    setSaving(true);
+    setMessage(null);
+    try {
+      const res = await api<LLMConfig>("/auth/me/llm-config", {
+        method: "PUT",
+        body: JSON.stringify({ ollama_base_url: baseUrl, ollama_model: model }),
+      });
+      setCfg(res);
+      setMessage({
+        ok: true,
+        text: res.enabled
+          ? `KI-Assistent aktiviert (${res.ollama_model}).`
+          : "Gespeichert — KI-Assistent deaktiviert (nur lokale Extraktion).",
+      });
+    } catch (e) {
+      setMessage({ ok: false, text: `Speichern fehlgeschlagen: ${(e as Error).message}` });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const remove = async () => {
+    if (!confirm("LLM-Konfiguration löschen? Nur lokale Extraktion wird verwendet.")) return;
+    try {
+      await api("/auth/me/llm-config", { method: "DELETE" });
+      setCfg(null);
+      setModels([]);
+      setMessage({ ok: true, text: "Konfiguration gelöscht." });
+    } catch (e) {
+      setMessage({ ok: false, text: `Löschen fehlgeschlagen: ${(e as Error).message}` });
+    }
+  };
+
+  if (!loaded) return <div className="text-stone-500">Lade…</div>;
+
+  return (
+    <section className="rounded-lg border border-stone-200 p-4 dark:border-stone-800">
+      <div className="mb-1 flex items-center justify-between">
+        <h3 className="font-semibold">KI-Assistent (LLM)</h3>
+        <span className={`text-xs ${cfg?.enabled ? "text-green-600" : "text-stone-400"}`}>
+          {cfg?.enabled ? "aktiv" : "inaktiv"}
+        </span>
+      </div>
+      <p className="mb-4 text-xs text-stone-500">
+        Optionaler Ollama-Server als Fallback, wenn die lokale Extraktion unsicher ist.
+        Ohne Konfiguration läuft die Erfassung rein lokal (~1 ms). Die Verbindung
+        wird pro Nutzer konfiguriert.
+      </p>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div>
+          <label className="mb-1 block text-xs text-stone-500">Ollama Base-URL</label>
+          <input
+            className="input"
+            value={baseUrl}
+            onChange={(e) => setBaseUrl(e.target.value)}
+            placeholder="http://192.168.100.91:11434"
+          />
+        </div>
+        <div>
+          <label className="mb-1 block text-xs text-stone-500">Modell</label>
+          {models.length > 0 ? (
+            <select className="input" value={model} onChange={(e) => setModel(e.target.value)}>
+              <option value="">— deaktiviert —</option>
+              {models.map((m) => (
+                <option key={m} value={m}>{m}</option>
+              ))}
+            </select>
+          ) : (
+            <input
+              className="input"
+              value={model}
+              onChange={(e) => setModel(e.target.value)}
+              placeholder="z. B. gemma4:e2b (leer = deaktiviert)"
+            />
+          )}
+        </div>
+      </div>
+
+      <div className="mt-4 flex flex-wrap items-center gap-2">
+        <button onClick={testConnection} disabled={testing || !baseUrl} className="btn text-sm">
+          {testing ? "Prüfe…" : "Verbindung testen & Modelle laden"}
+        </button>
+        <button onClick={save} disabled={saving || !baseUrl} className="btn-primary text-sm">
+          {saving ? "Speichern…" : "Speichern"}
+        </button>
+        {cfg && (
+          <button onClick={remove} className="btn text-sm text-red-600">
+            Löschen
+          </button>
+        )}
+      </div>
+
+      {models.length > 0 && model === "" && (
+        <p className="mt-2 text-xs text-stone-500">
+          Modell „— deaktiviert —" wählen und speichern, um das LLM auszuschalten.
+        </p>
+      )}
+      {message && (
+        <p className={`mt-3 text-sm ${message.ok ? "text-green-600" : "text-red-600"}`}>
+          {message.text}
+        </p>
+      )}
+    </section>
   );
 }
 

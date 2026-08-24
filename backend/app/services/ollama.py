@@ -6,8 +6,6 @@ from typing import Any
 
 import httpx
 
-from app.core.config import settings
-
 logger = logging.getLogger(__name__)
 
 EXTRACTION_SCHEMA = {
@@ -44,7 +42,9 @@ EXTRACTION_SCHEMA = {
 
 class OllamaClient:
     def __init__(self, base_url: str | None = None):
-        self.base_url = (base_url or settings.ollama_base_url).rstrip("/")
+        if not base_url:
+            raise ValueError("base_url erforderlich (pro Nutzer konfiguriert)")
+        self.base_url = base_url.rstrip("/")
 
     async def extract_task(
         self,
@@ -53,7 +53,8 @@ class OllamaClient:
         model: str | None = None,
         timeout: int = 90,
     ) -> dict[str, Any]:
-        model = model or settings.ollama_model
+        if not model:
+            raise ValueError("model erforderlich (pro Nutzer konfiguriert)")
         url = f"{self.base_url}/api/chat"
 
         payload: dict[str, Any] = {

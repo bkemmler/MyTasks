@@ -17,7 +17,6 @@ import json
 import time
 from pathlib import Path
 
-from app.core.config import settings
 from app.services.normalizer import normalize_extraction
 from app.services.ollama import OllamaClient
 from app.services.prompt import render_prompt
@@ -215,21 +214,20 @@ async def evaluate(
     model: str | None = None,
     prompt_version: int | None = None,
     limit: int | None = None,
+    base_url: str = "http://localhost:11434",
 ) -> tuple[list[dict], float, float]:
-    model = model or settings.ollama_model
-
     examples = load_eval_set()
     if limit:
         examples = examples[:limit]
 
-    # Kein LLM konfiguriert → nur lokale Pipeline evaluieren
+    # Kein Modell angegeben → nur lokale Pipeline evaluieren
     if not model:
         print("Modell:         (kein LLM — nur lokale Pipeline)")
         print(f"Beispiele:      {len(examples)}")
         print("-" * 60)
         return _evaluate_local(examples)
 
-    client = OllamaClient()
+    client = OllamaClient(base_url=base_url)
     print(f"Modell:         {model}")
     print(f"Beispiele:      {len(examples)}")
     print(f"Prompt-Version: {prompt_version or 'default'}")
@@ -291,21 +289,25 @@ async def compare_models(models: list[str]):
 def main():
     parser = argparse.ArgumentParser(description="tasky LLM Eval")
     parser.add_argument("--model", help="Ollama-Modell")
+    parser.add_argument("--base-url", default="http://192.168.100.91:11434", help="Ollama-Server")
     parser.add_argument("--prompt-version", type=int, help="Prompt-Version")
     parser.add_argument("--limit", type=int, help="Max Beispiele (für schnellen Test)")
-    parser.add_argument("--compare", action="store_true", help="Alle konfigurierten Modelle vergleichen")
+    parser.add_argument("--compare", action="store_true", help="Mehrere Modelle vergleichen")
     parser.add_argument("--output", help="Ergebnisse als JSON speichern")
     args = parser.parse_args()
 
     if args.compare:
-        models = [m.strip() for m in settings.ollama_model.split(",") if m.strip()]
-        if not models:
-            models = ["gemma4:e2b"]
+        models = ["gemma4:e2b", "granite4.1:3b", "qwen2.5:3b"]
         asyncio.run(compare_models(models))
         return
 
     results, score, _elapsed = asyncio.run(
-        evaluate(model=args.model, prompt_version=args.prompt_version, limit=args.limit)
+        evaluate(
+            model=args.model,
+            prompt_version=args.prompt_version,
+            limit=args.limit,
+            base_url=args.base_url,
+        )
     )
 
     if args.output:

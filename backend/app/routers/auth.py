@@ -20,6 +20,8 @@ from app.models.user import RefreshToken as RefreshTokenModel
 from app.models.user import User
 from app.schemas.auth import (
     ChangePasswordRequest,
+    LLMConfigIn,
+    LLMConfigOut,
     LoginRequest,
     MailConfigIn,
     MailConfigOut,
@@ -269,3 +271,97 @@ async def test_mail_config(
         smtp=smtp,
     )
     return {"success": ok, "to": target}
+
+
+def _llm_config_out(cfg) -> LLMConfigOut:
+    return LLMConfigOut(
+        ollama_base_url=cfg.ollama_base_url,
+        ollama_model=cfg.ollama_model,
+        enabled=bool(cfg.ollama_model),
+    )
+
+
+@router.get("/me/llm-config", response_model=LLMConfigOut)
+async def get_llm_config_endpoint(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Eigene LLM-Konfiguration lesen (404 wenn nie konfiguriert)."""
+    from app.services.user_llm import get_llm_config_row
+
+    cfg = await get_llm_config_row(db, current_user.id)
+    if not cfg:
+        raise NotFoundError("Keine LLM-Konfiguration hinterlegt")
+    return _llm_config_out(cfg)
+
+
+@router.put("/me/llm-config", response_model=LLMConfigOut)
+async def put_llm_config(
+    body: LLMConfigIn,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Eigene LLM-Konfiguration speichern. Leeres Modell = deaktiviert."""
+    from app.models.llm import UserLLMConfig
+    from app.services.user_llm import get_llm_config_row
+
+    cfg = await get_llm_config_row(db, current_user.id)
+    if cfg is None:
+        cfg = UserLLMConfig(user_id=current_user.id)
+        db.add(cfg)
+
+    base_url = body.ollama_base_url.strip()
+    if not base_url.startswith(("http://", "https://")):
+        from app.core.exceptions import ValidationError as AppValidationError
+        raise AppValidationError("Base-URL muss mit http:// oder https:// beginnen")
+
+    cfg.ollama_base_url = base_url.rstrip("/")
+    cfg.ollama_model = body.ollama_model.strip()
+
+    await db.commit()
+    await audit(db, "llm.config.update", user_id=current_user.id, target=base_url)
+    return _llm_config_out(cfg)
+
+
+@router.delete("/me/llm-config", status_code=204)
+async def delete_llm_config(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Eigene LLM-Konfiguration löschen (nur lokale Extraktion)."""
+    from app.services.user_llm import get_llm_config_row
+
+    cfg = await get_llm_config_row(db, current_user.id)
+    if cfg:
+        await db.delete(cfg)
+        await db.commit()
+        await audit(db, "llm.config.delete", user_id=current_user.id)
+    return None
+
+
+@router.post("/me/llm-config/test")
+async def test_llm_config(
+    body: dict | None = Body(None),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Testet die Ollama-Verbindung und liefert die verfügbaren Modelle.
+
+    Optional body: {"ollama_base_url": "..."} — sonst gespeicherte Config.
+    """
+    from app.services.user_llm import list_ollama_models
+
+    base_url = (body or {}).get("ollama_base_url") or ""
+    if not base_url:
+        from app.services.user_llm import get_llm_config_row
+
+        cfg = await get_llm_config_row(db, current_user.id)
+        if not cfg:
+            return {"success": False, "models": [], "detail": "Keine Base-URL angegeben"}
+        base_url = cfg.ollama_base_url
+
+    try:
+        models = await list_ollama_models(base_url)
+        return {"success": True, "models": models}
+    except Exception as e:
+        return {"success": False, "models": [], "detail": str(e)[:200]}

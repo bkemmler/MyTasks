@@ -23,7 +23,7 @@ sudo ./install.sh --ollama-url http://dein-ollama-server:11434
 # ODER: Mit lokalem Ollama
 sudo ./install.sh --install-ollama
 
-# ODER: Ohne LLM (nur lokale Extraktion)
+# ODER: Ohne LLM (nur lokale Extraktion, LLM später in der App aktivieren)
 sudo ./install.sh
 
 # 3. Im Browser öffnen
@@ -47,15 +47,12 @@ Alle Einstellungen in `/etc/tasks/tasks.env`:
 
 | Variable | Beschreibung |
 |----------|-------------|
-| `TASKS_OLLAMA_BASE_URL` | Ollama-URL (Default: `http://localhost:11434`) |
-| `TASKS_OLLAMA_MODEL` | LLM-Modell; **leer = nur lokale Extraktion** (Default: leer) |
 | `TASKS_BIND_PORT` | HTTP-Port (Default: `5000`) |
 
-### E-Mail-Versand (pro Nutzer)
+LLM und E-Mail werden **pro Nutzer** in der App unter **Einstellungen** konfiguriert:
 
-SMTP-Zugangsdaten werden **pro Nutzer** in der App unter **Einstellungen** hinterlegt (Host, Port, STARTTLS/SSL, Benutzername, Passwort, Absenderadresse). Das Passwort wird verschlüsselt gespeichert. Ohne eigene Mail-Konfiguration versendet die App für diesen Nutzer keine E-Mails — es gibt keinen globalen SMTP-Fallback.
-
-Jeder Nutzer konfiguriert außerdem sein Profil (E-Mail, Anzeigename, Zeitzone) und die tägliche Zusammenfassung (Aktiv/Uhrzeit) unter **Einstellungen**.
+- **KI-Assistent (LLM):** Ollama-Base-URL + Modell (per Verbindungstest als Dropdown). Optional — ohne Konfiguration läuft die Extraktion rein lokal (~1 ms). Bei unsicherer lokaler Erkennung wird das LLM als Fallback genutzt.
+- **E-Mail-Versand:** Eigene SMTP-Zugangsdaten für Test-Emails und die tägliche Zusammenfassung. Passwort wird verschlüsselt gespeichert. Ohne Konfiguration keine E-Mails.
 
 ## Backup & Restore
 

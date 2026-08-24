@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import json
 import time
+from datetime import datetime
 from pathlib import Path
 
 from app.services.local_extract import local_extract
@@ -70,12 +71,31 @@ def score_field(expected, actual, field: str) -> float:
             return 0.0
         return 1.0 if exp_val.lower() in act_val.lower() or act_val.lower() in exp_val.lower() else 0.0
 
+    if field == "due_at":
+        # Datum exakt = 1.0; ±1 Tag oder falsche Uhrzeit = 0.5
+        if not exp_val:
+            return 1.0 if not act_val else 0.0
+        if not act_val:
+            return 0.0
+        try:
+            exp_dt = datetime.fromisoformat(str(exp_val))
+            act_dt = datetime.fromisoformat(str(act_val))
+        except ValueError:
+            return 0.0
+        day_diff = abs((exp_dt.date() - act_dt.date()).days)
+        time_ok = (exp_dt.hour, exp_dt.minute) == (act_dt.hour, act_dt.minute)
+        if day_diff == 0 and time_ok:
+            return 1.0
+        if day_diff == 0 or (day_diff <= 1 and time_ok):
+            return 0.5
+        return 0.0
+
     return 0.0
 
 
 def score_example(result: dict, expected: dict) -> dict:
     actual = result
-    fields = ["title", "status", "priority", "subtasks", "waiting_for"]
+    fields = ["title", "status", "priority", "subtasks", "waiting_for", "due_at"]
     field_scores = {}
     total = 0.0
     for field in fields:
@@ -83,7 +103,7 @@ def score_example(result: dict, expected: dict) -> dict:
             s = score_field(expected, actual, field)
             field_scores[field] = s
             total += s
-    overall = total / max(len(fields), 1)
+    overall = total / max(len(field_scores), 1)
     return {"overall": round(overall, 3), "fields": field_scores}
 
 
@@ -107,7 +127,11 @@ def main():
 
     for i, example in enumerate(examples):
         start = time.monotonic()
-        result = local_extract(example["source_text"])
+        ref = example.get("reference_date")
+        result = local_extract(
+            example["source_text"],
+            now=datetime.fromisoformat(ref) if ref else None,
+        )
         elapsed = time.monotonic() - start
 
         scoring = score_example(result, example["expected"])

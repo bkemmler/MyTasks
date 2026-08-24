@@ -9,16 +9,17 @@ from pydantic import ValidationError
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.config import settings
 from app.core.database import async_session_factory
 from app.models.category import Category
 from app.models.llm import LLMJob
 from app.models.task import Task
+from app.models.user import User
 from app.schemas.llm import TaskExtraction
 from app.services.local_extract import local_extract
 from app.services.normalizer import normalize_extraction
 from app.services.ollama import OllamaClient
 from app.services.prompt import render_prompt
+from app.services.user_llm import LLMConfig, get_llm_config
 
 logger = logging.getLogger(__name__)
 
@@ -55,7 +56,7 @@ async def process_job(job_id: int) -> None:
             user_categories = list(cats_result.scalars().all())
             cat_aliases = {c.name: json.loads(c.aliases) if c.aliases else [] for c in user_categories}
 
-            extraction, source = await _extract(
+            extraction, source, llm_cfg = await _extract(
                 source_text=source_text,
                 cat_aliases=cat_aliases,
                 user_categories=user_categories,
@@ -78,7 +79,7 @@ async def process_job(job_id: int) -> None:
                     _apply_extraction(task, normalized)
                     task.llm_state = "done"
                     task.llm_confidence = normalized.get("confidence")
-                    task.llm_model = "local" if source == "local" else settings.ollama_model
+                    task.llm_model = "local" if source == "local" else llm_cfg.model
                     task.needs_review = normalized.get("needs_review_date", False) or (
                         source == "local" and normalized.get("confidence", 1.0) < 0.7
                     )
@@ -117,22 +118,30 @@ async def _extract(
     user_categories: list[Category],
     user_id: int,
     db: AsyncSession,
-) -> tuple[dict, str]:
+) -> tuple[dict, str, LLMConfig | None]:
     """Hybrid-Extraktion: zuerst lokal, LLM als Fallback bei niedriger Confidence.
 
-    Returns (extraction_dict, source) mit source in {"local", "llm"}.
+    LLM nur mit eigener Konfiguration des Nutzers — ohne Konfiguration
+    ausschließlich lokal (kein globaler Fallback).
+
+    Returns (extraction_dict, source, llm_config) mit source in {"local", "llm"}.
     """
     raw = local_extract(source_text, category_aliases=cat_aliases)
     confidence = raw.get("confidence", 0.0)
 
+    # Nutzer-Config laden (User-Objekt minimal nachbauen)
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    llm_cfg = await get_llm_config(db, user) if user else None
+
     # Kein LLM konfiguriert → nur lokale Pipeline
-    if not settings.ollama_model:
+    if llm_cfg is None:
         logger.info("Kein LLM konfiguriert — nur lokale Extraktion (confidence=%.2f)", confidence)
-        return raw, "local"
+        return raw, "local", None
 
     if confidence >= LOCAL_CONFIDENCE_THRESHOLD:
         logger.info("Local extract OK (confidence=%.2f)", confidence)
-        return raw, "local"
+        return raw, "local", llm_cfg
 
     logger.info(
         "Local extract unsicher (confidence=%.2f), fallback auf LLM", confidence
@@ -143,11 +152,12 @@ async def _extract(
         user_categories=user_categories,
         user_id=user_id,
         db=db,
+        llm_cfg=llm_cfg,
     )
     if ok:
-        return extraction, "llm"
+        return extraction, "llm", llm_cfg
 
-    return raw, "local"
+    return raw, "local", llm_cfg
 
 
 async def _llm_extract(
@@ -156,8 +166,9 @@ async def _llm_extract(
     user_categories: list[Category],
     user_id: int,
     db: AsyncSession,
+    llm_cfg: LLMConfig,
 ) -> tuple[dict, bool]:
-    """LLM-Extraktion. Gibt (extraction, ok) zurück."""
+    """LLM-Extraktion mit der Konfiguration des Nutzers. Gibt (extraction, ok) zurück."""
     cat_data = [{"name": c.name, "aliases": cat_aliases.get(c.name, [])} for c in user_categories]
     prompt = render_prompt(
         user_text=source_text,
@@ -169,13 +180,14 @@ async def _llm_extract(
     )
 
     try:
-        client = OllamaClient()
+        client = OllamaClient(base_url=llm_cfg.base_url)
         raw_output = await client.extract_task(
             system_prompt=prompt,
             user_text=source_text,
-            timeout=settings.ollama_timeout_seconds,
+            timeout=llm_cfg.timeout_seconds,
+            model=llm_cfg.model,
         )
-        extraction = await _validate_and_repair(raw_output, client, prompt, source_text)
+        extraction = await _validate_and_repair(raw_output, client, prompt, source_text, model=llm_cfg.model)
         return extraction.model_dump(), True
     except Exception as e:
         logger.warning("LLM-Extraktion fehlgeschlagen: %s", e)
@@ -188,6 +200,7 @@ async def _validate_and_repair(
     prompt: str,
     user_text: str,
     max_retries: int = 2,
+    model: str | None = None,
 ) -> TaskExtraction:
     for attempt in range(max_retries):
         try:
@@ -204,6 +217,7 @@ async def _validate_and_repair(
             raw = await client.extract_task(
                 system_prompt=retry_prompt,
                 user_text=user_text,
+                model=model,
             )
 
     raise ValueError("Max retries exceeded")

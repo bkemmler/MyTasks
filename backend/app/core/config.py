@@ -28,11 +28,6 @@ class Settings(BaseSettings):
     secret_key: str = "change-me-in-production-use-env-or-file"
     secret_key_file: str = ""
 
-    ollama_base_url: str = "http://localhost:11434"
-    ollama_model: str = ""
-    ollama_timeout_seconds: int = 90
-    ollama_keep_alive: str = "30m"
-
     rate_limit_enabled: bool = True
 
     # SMTP wird pro Nutzer konfiguriert (user_mail_configs), nicht global.

@@ -75,3 +75,16 @@ class MailConfigOut(BaseModel):
     has_password: bool = False
     from_address: str
     from_name: str | None = None
+
+
+class LLMConfigIn(BaseModel):
+    """Eigene LLM-Konfiguration. Leeres Modell = LLM deaktiviert."""
+
+    ollama_base_url: str = Field(min_length=1, max_length=255)
+    ollama_model: str = Field(default="", max_length=255)
+
+
+class LLMConfigOut(BaseModel):
+    ollama_base_url: str
+    ollama_model: str
+    enabled: bool = False
