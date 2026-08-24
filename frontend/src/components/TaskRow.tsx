@@ -84,12 +84,19 @@ export function TaskRow({ task, onCompleted }: { task: Task; onCompleted?: (uuid
             >
               {task.title}
             </button>
-            <span
-              className={clsx("rounded px-1.5 py-0.5 text-xs", PRIO_COLOR[task.priority])}
-              title={`Priorität ${task.priority}`}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                patch({ priority: ((task.priority % 4) + 1) as Task["priority"] });
+              }}
+              className={clsx(
+                "rounded px-1.5 py-0.5 text-xs hover:opacity-80",
+                PRIO_COLOR[task.priority],
+              )}
+              title={t("taskrow.priorityCycle", { n: task.priority })}
             >
               P{task.priority}
-            </span>
+            </button>
             {justCompleted && (
               <button
                 onClick={() => {

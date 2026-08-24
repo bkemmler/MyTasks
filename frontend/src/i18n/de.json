@@ -167,7 +167,8 @@
     "deleteConfirm": "Task wirklich löschen?",
     "undo": "✓ Erledigt — Rückgängig",
     "priority": "Priorität",
-    "titleField": "Titel"
+    "titleField": "Titel",
+    "priorityCycle": "Priorität ändern (aktuell P{{n}})"
   },
   "settings": {
     "heading": "Einstellungen",

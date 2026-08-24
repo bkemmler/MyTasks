@@ -167,7 +167,8 @@
     "deleteConfirm": "Really delete this task?",
     "undo": "✓ Done — Undo",
     "priority": "Priority",
-    "titleField": "Title"
+    "titleField": "Title",
+    "priorityCycle": "Change priority (current P{{n}})"
   },
   "settings": {
     "heading": "Settings",
