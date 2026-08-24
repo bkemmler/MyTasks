@@ -58,7 +58,7 @@ android/
 │   └── src/main/
 │       ├── AndroidManifest.xml       INTERNET-Permission, HTTPS-only
 │       ├── assets/inject.js          fetch/XHR-Header-Patch (Schicht 3)
-│       └── java/de/kemmler/mytasks/
+│       └── java/de/mytasks/app/
 │           ├── MainActivity.kt       WebView + Header-Injection + 401-Handling
 │           ├── SettingsActivity.kt   Konfiguration + Verbindungstest
 │           └── ConfigStore.kt        EncryptedSharedPreferences

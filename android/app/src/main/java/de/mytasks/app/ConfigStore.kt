@@ -1,4 +1,4 @@
-package de.kemmler.mytasks
+package de.mytasks.app
 
 import android.content.Context
 import android.content.SharedPreferences

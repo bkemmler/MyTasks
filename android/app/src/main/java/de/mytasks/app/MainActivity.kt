@@ -1,4 +1,4 @@
-package de.kemmler.mytasks
+package de.mytasks.app
 
 import android.annotation.SuppressLint
 import android.app.Activity

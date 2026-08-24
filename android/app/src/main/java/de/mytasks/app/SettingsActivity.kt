@@ -1,4 +1,4 @@
-package de.kemmler.mytasks
+package de.mytasks.app
 
 import android.os.Bundle
 import android.view.View

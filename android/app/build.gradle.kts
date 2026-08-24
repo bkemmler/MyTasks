@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace = "de.kemmler.mytasks"
+    namespace = "de.mytasks.app"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "de.kemmler.mytasks"
+        applicationId = "de.mytasks.app"
         minSdk = 26
         targetSdk = 34
         versionCode = 1
