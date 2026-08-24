@@ -36,7 +36,7 @@ Drei Injektions-Schichten stellen das sicher:
    - ✅ Erfolg → Hauptansicht
    - ❌ HTTP 401/403 → „Token abgelehnt", Zugangsdaten prüfen
 
-Tokens laufen ab? Die App erkennt 401/403 beim Laden und zeigt „Token ungültig oder abgelaufen" — dann im Pangolin-Portal einen neuen Token erzeugen und unter ⚙ aktualisieren.
+Tokens laufen ab? Die App erkennt das **automatisch** — sowohl beim Laden (HTTP 401/403 der Hauptseite) als auch mitten in der Sitzung (API-Calls der Weboberfläche werden über eine JS-Bridge überwacht). Es erscheint sofort das Token-Fenster; über ⚙ oben rechts kommst du jederzeit in die Konfiguration. Dort genügt es, nur das neue Token einzutragen — Server-URL und Token-Id bleiben erhalten, wenn die Felder leer bleiben.
 
 ## Build (Android Studio)
 

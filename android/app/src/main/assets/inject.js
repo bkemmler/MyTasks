@@ -16,6 +16,19 @@
         }
     }
 
+    // Token-Ablauf erkennen: 401/403 einmalig an Android melden.
+    var authReported = false;
+    function reportAuthRejected(status) {
+        if (authReported) return;
+        if (status !== 401 && status !== 403) return;
+        authReported = true;
+        try {
+            if (window.MTAuth && window.MTAuth.expired) {
+                window.MTAuth.expired(status);
+            }
+        } catch (e) { /* Bridge nicht verfügbar — ignorieren */ }
+    }
+
     // ── fetch ────────────────────────────────────────────────────────
     var originalFetch = window.fetch;
     if (originalFetch) {
@@ -33,26 +46,32 @@
                     headers.set("P-Access-Token-Id", window.__MT_TOKEN_ID);
                     headers.set("P-Access-Token", window.__MT_TOKEN);
                 }
+                var promise;
                 if (typeof input === "string") {
-                    return originalFetch.call(this, input, Object.assign({}, init, { headers: headers }));
+                    promise = originalFetch.call(this, input, Object.assign({}, init, { headers: headers }));
+                } else {
+                    // Request-Objekt kann nicht mutieren → neu bauen
+                    var cloned = input.clone();
+                    promise = originalFetch.call(
+                        this,
+                        new Request(cloned.url, {
+                            method: cloned.method,
+                            headers: headers,
+                            body: ["GET", "HEAD"].indexOf(cloned.method) === -1 ? cloned.body : undefined,
+                            mode: cloned.mode,
+                            credentials: cloned.credentials,
+                            cache: cloned.cache,
+                            redirect: cloned.redirect,
+                            referrer: cloned.referrer,
+                            integrity: cloned.integrity,
+                        }),
+                        init
+                    );
                 }
-                // Request-Objekt kann nicht mutieren → neu bauen
-                var cloned = input.clone();
-                return originalFetch.call(
-                    this,
-                    new Request(cloned.url, {
-                        method: cloned.method,
-                        headers: headers,
-                        body: ["GET", "HEAD"].indexOf(cloned.method) === -1 ? cloned.body : undefined,
-                        mode: cloned.mode,
-                        credentials: cloned.credentials,
-                        cache: cloned.cache,
-                        redirect: cloned.redirect,
-                        referrer: cloned.referrer,
-                        integrity: cloned.integrity,
-                    }),
-                    init
-                );
+                return promise.then(function (response) {
+                    reportAuthRejected(response.status);
+                    return response;
+                });
             } catch (e) {
                 return originalFetch.apply(this, arguments);
             }
@@ -66,6 +85,9 @@
     XMLHttpRequest.prototype.open = function (method, url) {
         this.__mtUrl = url;
         this.__mtShouldSign = shouldSign(String(url));
+        this.addEventListener("load", function () {
+            reportAuthRejected(this.status);
+        });
         return originalOpen.apply(this, arguments);
     };
 

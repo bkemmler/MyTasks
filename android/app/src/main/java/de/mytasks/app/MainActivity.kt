@@ -6,6 +6,7 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.os.Bundle
 import android.view.View
+import android.webkit.JavascriptInterface
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
 import android.webkit.WebView
@@ -72,6 +73,10 @@ class MainActivity : AppCompatActivity() {
         webView.settings.userAgentString =
             "${webView.settings.userAgentString} MyTasksAndroid/${BuildConfig.VERSION_NAME}"
 
+        // JS-Bridge: inject.js meldet 401/403 aus fetch/XHR → Token-Fenster.
+        // Sicher: nur im authentifizierten WebView aktiv, Methode zeigt nur UI.
+        webView.addJavascriptInterface(AuthBridge(), "MTAuth")
+
         webView.webViewClient = object : WebViewClient() {
 
             override fun shouldOverrideUrlLoading(
@@ -120,6 +125,9 @@ class MainActivity : AppCompatActivity() {
 
         retryButton.setOnClickListener { loadApp() }
         settingsButton.setOnClickListener { startSettings() }
+
+        // ⚙-Overlay: jederzeit in die Token-Konfiguration
+        findViewById<View>(R.id.btn_gear).setOnClickListener { startSettings() }
 
         loadApp()
     }
@@ -192,6 +200,19 @@ class MainActivity : AppCompatActivity() {
         runOnUiThread {
             errorView.text = getString(R.string.error_token_rejected_short)
             errorBox.visibility = View.VISIBLE
+        }
+    }
+
+    /**
+     * JS-Bridge für inject.js: meldet 401/403 aus fetch/XHR-Calls der SPA.
+     * Kann ausschließlich das Token-Fenster anzeigen — keine Daten, keine
+     * Rückgabewerte. Nur im authentifizierten WebView geladen (externe Hosts
+     * öffnen den Systembrowser).
+     */
+    private inner class AuthBridge {
+        @JavascriptInterface
+        fun expired(status: Int) {
+            runOnUiThread { handleAuthRejected() }
         }
     }
 
