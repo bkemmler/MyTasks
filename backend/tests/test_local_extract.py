@@ -185,3 +185,66 @@ class TestDatePhraseResolution:
         due, all_day, _ = self._resolve("Anruf morgen")
         assert due.startswith("2026-08-25T17:00")
         assert all_day is True
+
+
+class TestRecurrenceExtraction:
+    """Erkennung von Wiederholungs-Mustern → RRULE."""
+
+    from datetime import datetime
+
+    NOW = datetime(2026, 8, 24, 10, 0)  # Montag
+
+    def _extract(self, text: str):
+        r = local_extract(text, now=self.NOW)
+        return r["recurrence_rule"], r["title"], r["due_at"]
+
+    def test_jeden_montag(self):
+        rule, title, due = self._extract("Statusbericht jeden montag schreiben")
+        assert rule == "FREQ=WEEKLY;BYDAY=MO"
+        assert "jeden" not in title.lower() and "montag" not in title.lower()
+        assert title == "Statusbericht schreiben"
+        # nächster Montag nach dem 24.08. = 31.08.
+        assert due.startswith("2026-08-31")
+
+    def test_taeglich(self):
+        rule, title, _ = self._extract("Müll rausbringen täglich")
+        assert rule == "FREQ=DAILY"
+        assert title == "Müll rausbringen"
+
+    def test_woechentlich(self):
+        rule, _, _ = self._extract("Bericht wöchentlich erstellen")
+        assert rule == "FREQ=WEEKLY"
+
+    def test_monatlich_am_ersten(self):
+        rule, _, due = self._extract("Miete monatlich am 1. überweisen")
+        assert rule == "FREQ=MONTHLY;BYMONTHDAY=1"
+        # Tag 1 ist vorbei (24.08.) → nächster Monat
+        assert due.startswith("2026-09-01")
+
+    def test_alle_zwei_wochen(self):
+        rule, _, due = self._extract("Backup alle 2 wochen prüfen")
+        assert rule == "FREQ=WEEKLY;INTERVAL=2"
+        assert due.startswith("2026-09-07")  # NOW + 14 Tage
+
+    def test_jaehrlich(self):
+        rule, _, _ = self._extract("Versicherung jährlich wechseln")
+        assert rule == "FREQ=YEARLY"
+
+    def test_rrule_is_valid(self):
+        from dateutil.rrule import rrulestr
+
+        for text in [
+            "jeden dienstag standup",
+            "täglich meditieren",
+            "alle 3 tage gießen",
+            "monatlich am 15. bericht",
+        ]:
+            rule, _, _ = self._extract(text)
+            assert rule is not None
+            rrulestr(rule)  # darf nicht werfen
+
+    def test_einmalig_kein_recurrence(self):
+        """'am Freitag' ohne 'jeden' erzeugt keine Wiederholung."""
+        for text in ["Meeting am freitag", "Wohnung putzen am samstag", "Bericht morgen"]:
+            rule, _, _ = self._extract(text)
+            assert rule is None, f'{text!r} sollte keine Wiederholung haben'

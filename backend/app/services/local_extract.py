@@ -54,6 +54,75 @@ DONE_TRIGGERS = [
 URL_RE = re.compile(r"https?://[^\s]+")
 TAG_RE = re.compile(r"#(\w+)")
 
+WEEKDAY_RRULE = {
+    "montag": "MO", "dienstag": "TU", "mittwoch": "WE", "donnerstag": "TH",
+    "freitag": "FR", "samstag": "SA", "sonntag": "SU",
+}
+
+# Explizite Wiederholungs-Muster → RRULE-Basis
+_RECurrence_PATTERNS: list[tuple[re.Pattern[str], str]] = [
+    (re.compile(r"\btäglich\b|\bjeden tag\b", re.IGNORECASE), "FREQ=DAILY"),
+    (re.compile(r"\bwöchentlich\b|\bjede woche\b", re.IGNORECASE), "FREQ=WEEKLY"),
+    (re.compile(r"\bmonatlich\b|\bjeden monat\b", re.IGNORECASE), "FREQ=MONTHLY"),
+    (re.compile(r"\bjährlich\b|\bjedes jahr\b", re.IGNORECASE), "FREQ=YEARLY"),
+]
+
+# "jeden/jede/jedes <wochentag>" → FREQ=WEEKLY;BYDAY=X
+_REC_WEEKDAY_RE = re.compile(
+    r"\bjeden?\s+(?:montag|dienstag|mittwoch|donnerstag|freitag|samstag|sonntag)\b",
+    re.IGNORECASE,
+)
+
+# "alle N tage/wochen" → INTERVAL
+_REC_INTERVAL_RE = re.compile(
+    r"\balle\s+(\d+)\s+(tage[nr]?|wochen?)\b",
+    re.IGNORECASE,
+)
+
+# "monatlich am 15." / "jeden monat am 15."
+_REC_MONTHDAY_RE = re.compile(
+    r"(?:monatlich|jeden monat)[^.!\n]{0,20}?\bam\s+(\d{1,2})\.",
+    re.IGNORECASE,
+)
+
+
+def _extract_recurrence(text: str) -> tuple[str | None, str | None]:
+    """Erkennt Wiederholungs-Muster. Returns (rrule, phrase) oder (None, None).
+
+    Nur explizite Muster triggern ("jeden montag", "täglich") —
+    ein einmaliges "am Freitag" erzeugt keine Wiederholung.
+    """
+    # Monatsday zuerst (spezifischer als bloßes "monatlich")
+    m = _REC_MONTHDAY_RE.search(text)
+    if m:
+        day = int(m.group(1))
+        if 1 <= day <= 31:
+            return f"FREQ=MONTHLY;BYMONTHDAY={day}", m.group(0).strip()
+
+    for pattern, rule in _RECurrence_PATTERNS:
+        m = pattern.search(text)
+        if m:
+            return rule, m.group(0).strip()
+
+    m = _REC_WEEKDAY_RE.search(text)
+    if m:
+        day_word = re.search(r"montag|dienstag|mittwoch|donnerstag|freitag|samstag|sonntag", m.group(0), re.IGNORECASE)
+        code = WEEKDAY_RRULE[day_word.group(0).lower()]
+        return f"FREQ=WEEKLY;BYDAY={code}", m.group(0).strip()
+
+    m = _REC_INTERVAL_RE.search(text)
+    if m:
+        amount = int(m.group(1))
+        unit = m.group(2).lower()
+        if amount > 1 or unit.startswith("woche"):
+            freq = "WEEKLY" if unit.startswith("woche") else "DAILY"
+            interval = f";INTERVAL={amount}" if amount > 1 else ""
+            return f"FREQ={freq}{interval}", m.group(0).strip()
+        # "alle 1 tage" = täglich
+        return "FREQ=DAILY", m.group(0).strip()
+
+    return None, None
+
 
 def _strip_urls(text: str) -> tuple[str, str | None]:
     m = URL_RE.search(text)
@@ -164,14 +233,26 @@ def _extract_subtasks(text: str) -> list[str]:
     return []
 
 
-def _clean_title(text: str, due_phrase: str | None) -> str:
+def _clean_title(
+    text: str, due_phrase: str | None, recurrence_phrase: str | None = None
+) -> str:
     """Bereinigt den Rohtext zu einem kurzen, imperativischen Titel."""
     cleaned = text
     cleaned = re.sub(r"https?://\S+", "", cleaned)
     cleaned = TAG_RE.sub("", cleaned)
 
-    if due_phrase:
-        cleaned = cleaned.replace(due_phrase, " ")
+    if due_phrase or recurrence_phrase:
+        # Beide Phrasen in EINEM Durchgang entfernen (längste zuerst),
+        # damit sich überlappende Datums-/Wiederholungs-Phrasen nicht
+        # gegenseitig "kaputt" ersetzen. \s+ statt Leerzeichen macht den
+        # Match robust gegen Whitespace-Varianten.
+        phrases = sorted(
+            (p for p in (due_phrase, recurrence_phrase) if p),
+            key=len,
+            reverse=True,
+        )
+        alternation = "|".join(re.escape(p).replace(r"\ ", r"\s+") for p in phrases)
+        cleaned = re.sub(alternation, " ", cleaned, flags=re.IGNORECASE)
 
     # Übrig gebliebene Konnektoren am Ende entfernen ("Zahnarzt am")
     cleaned = re.sub(
@@ -252,7 +333,8 @@ def local_extract(
         text_no_url, default_due_time, now=now
     )
 
-    title = _clean_title(text_no_url, due_phrase)
+    recurrence_rule, recurrence_phrase = _extract_recurrence(text_no_url)
+    title = _clean_title(text_no_url, due_phrase, recurrence_phrase)
     priority = _detect_priority(text_no_url)
     status, waiting_for = _detect_status(text_no_url)
 
@@ -271,9 +353,9 @@ def local_extract(
 
     confidence = _score_confidence(
         title=title,
-        due_resolved=due_at is not None,
+        due_resolved=due_at is not None or recurrence_rule is not None,
         has_priority=priority != 3,
-        status_certain=status != "offen" or priority != 3 or tags or subtasks,
+        status_certain=status != "offen" or priority != 3 or tags or subtasks or recurrence_rule is not None,
         ambiguities=ambiguities,
     )
 
@@ -294,7 +376,7 @@ def local_extract(
         "estimated_minutes": None,
         "location": None,
         "url": url,
-        "recurrence_rule": None,
+        "recurrence_rule": recurrence_rule,
         "confidence": confidence,
         "ambiguities": ambiguities,
     }

@@ -197,17 +197,40 @@ export function TaskRow({ task, onCompleted }: { task: Task; onCompleted?: (uuid
                 </div>
               </div>
             )}
-            {task.recurrence_rule && (
-              <div>
-                <Label>Wiederholung</Label>
-                <div className="flex items-center gap-2 px-2 py-1.5 text-sm">
-                  <span className="text-violet-600">{rruleLabel(task.recurrence_rule)}</span>
-                  <span className="text-xs text-stone-400">
-                    ({task.recurrence_rule})
+            <div>
+              <Label>Wiederholung</Label>
+              {editing === "recurrence" ? (
+                <select
+                  autoFocus
+                  value={ruleToOption(task.recurrence_rule, task.due_at)}
+                  onChange={(e) => {
+                    patch({ recurrence_rule: optionToRule(e.target.value, task.due_at) });
+                    setEditing(null);
+                  }}
+                  onBlur={() => setEditing(null)}
+                  className="input"
+                >
+                  {RECURRENCE_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>{o.label}</option>
+                  ))}
+                </select>
+              ) : (
+                <button
+                  onClick={() => setEditing("recurrence")}
+                  className="flex w-full items-center gap-2 rounded border border-transparent px-2 py-1.5 text-left text-sm hover:border-stone-300 dark:hover:border-stone-700"
+                >
+                  <span className="text-violet-500">↻</span>
+                  <span className={task.recurrence_rule ? "text-violet-600" : "text-stone-400"}>
+                    {task.recurrence_rule
+                      ? rruleLabel(task.recurrence_rule)
+                      : "nicht wiederkehrend"}
                   </span>
-                </div>
-              </div>
-            )}
+                  {task.recurrence_rule && (
+                    <span className="ml-auto text-xs text-stone-400">ändern</span>
+                  )}
+                </button>
+              )}
+            </div>
             <div>
               <Label>Kategorie</Label>
               <select
@@ -352,21 +375,100 @@ function DeferredInput({
   );
 }
 
+const RECURRENCE_OPTIONS = [
+  { value: "none", label: "Keine" },
+  { value: "daily", label: "Täglich" },
+  { value: "weekly", label: "Wöchentlich" },
+  { value: "monthly", label: "Monatlich" },
+  { value: "yearly", label: "Jährlich" },
+] as const;
+
+function _dueParts(dueIso: string | null): { weekday: string; day: number; month: number } {
+  const base = dueIso ? parseISO(dueIso) : new Date();
+  const codes = ["SU", "MO", "TU", "WE", "TH", "FR", "SA"];
+  return {
+    weekday: codes[base.getDay()],
+    day: base.getDate(),
+    month: base.getMonth() + 1,
+  };
+}
+
+function ruleToOption(rule: string | null, dueIso: string | null): string {
+  if (!rule) return "none";
+  if (rule.startsWith("FREQ=DAILY")) return "daily";
+  if (rule.startsWith("FREQ=WEEKLY")) return "weekly";
+  if (rule.startsWith("FREQ=MONTHLY")) return "monthly";
+  if (rule.startsWith("FREQ=YEARLY")) return "yearly";
+  return "none";
+}
+
+function optionToRule(option: string, dueIso: string | null): string | null {
+  if (option === "none") return null;
+  const p = _dueParts(dueIso);
+  switch (option) {
+    case "daily":
+      return "FREQ=DAILY";
+    case "weekly":
+      return `FREQ=WEEKLY;BYDAY=${p.weekday}`;
+    case "monthly":
+      return `FREQ=MONTHLY;BYMONTHDAY=${p.day}`;
+    case "yearly":
+      return `FREQ=YEARLY;BYMONTH=${p.month};BYMONTHDAY=${p.day}`;
+    default:
+      return null;
+  }
+}
+
 function rruleLabel(rule: string): string {
   try {
-    if (rule.startsWith("FREQ=WEEKLY;BYDAY=")) {
-      const day = rule.split("BYDAY=")[1]?.split(";")[0];
-      const days: Record<string, string> = {
-        MO: "Montag", TU: "Dienstag", WE: "Mittwoch",
-        TH: "Donnerstag", FR: "Freitag", SA: "Samstag", SU: "Sonntag",
-      };
-      if (day && days[day]) return `Jeden ${days[day]}`;
+    const params = new URLSearchParams(
+      rule.split(";").map((kv) => kv.split("=", 2)).filter((kv): kv is [string, string] => kv.length === 2),
+    );
+    const freq = params.get("FREQ");
+    const interval = Number(params.get("INTERVAL") || "1");
+    const byday = params.get("BYDAY");
+    const bymonthday = params.get("BYMONTHDAY");
+    const bymonth = params.get("BYMONTH");
+    const days: Record<string, string> = {
+      MO: "Montag", TU: "Dienstag", WE: "Mittwoch",
+      TH: "Donnerstag", FR: "Freitag", SA: "Samstag", SU: "Sonntag",
+    };
+    const months = [
+      "Januar", "Februar", "März", "April", "Mai", "Juni",
+      "Juli", "August", "September", "Oktober", "November", "Dezember",
+    ];
+
+    let label: string;
+    switch (freq) {
+      case "DAILY":
+        label = interval > 1 ? `Alle ${interval} Tage` : "Täglich";
+        break;
+      case "WEEKLY":
+        if (interval > 1) {
+          label = `Alle ${interval} Wochen${byday && days[byday] ? ` (${days[byday]})` : ""}`;
+        } else if (byday && days[byday]) {
+          label = `Jeden ${days[byday]}`;
+        } else {
+          label = "Wöchentlich";
+        }
+        break;
+      case "MONTHLY":
+        if (bymonthday) {
+          label = `Am ${bymonthday}. jedes Monats`;
+        } else {
+          label = "Monatlich";
+        }
+        break;
+      case "YEARLY":
+        label =
+          bymonth && bymonthday
+            ? `${months[Number(bymonth) - 1] ?? ""} ${bymonthday}.`
+            : "Jährlich";
+        break;
+      default:
+        label = "Wiederholend";
     }
-    if (rule.startsWith("FREQ=WEEKLY")) return "Wöchentlich";
-    if (rule.startsWith("FREQ=DAILY")) return "Täglich";
-    if (rule.startsWith("FREQ=MONTHLY")) return "Monatlich";
-    if (rule.startsWith("FREQ=YEARLY")) return "Jährlich";
-    return "Wiederholend";
+    return label.trim() || "Wiederholend";
   } catch {
     return "Wiederholend";
   }

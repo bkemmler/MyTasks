@@ -39,14 +39,17 @@ _BLOCK_RES: list[re.Pattern[str]] = [
     re.compile(r"(?:\d{1,2}\.\s*)?(?:januar|februar|märz|april|mai|juni|juli|august|september|oktober|november|dezember)(?:\s+\d{4})?", re.IGNORECASE),
     # In N Einheiten
     re.compile(r"in\s+\d+\s+(?:tagen?|wochen?|stunden?|minuten?)", re.IGNORECASE),
-    # Uhrzeit: "8 uhr", "14:30", "9.30 uhr", "um 8"
-    re.compile(r"\d{1,2}(?:[:.]\d{2})?\s*(?:uhr)?", re.IGNORECASE),
+    # Alle N Tage/Wochen (Wiederholungsintervall)
+    re.compile(r"alle\s+\d+\s+(?:tagen?|wochen?)", re.IGNORECASE),
+    # Uhrzeit: "8 uhr", "14:30", "9.30 uhr", "um 8"; auch "1." bei "am 1."
+    # (trailing Punkt nur wenn keine weiteren Ziffern folgen)
+    re.compile(r"\d{1,2}(?:[:.]\d{2})?(?:\.(?!\d))?\s*(?:uhr)?", re.IGNORECASE),
 ]
 
 # Konnektoren zwischen zwei Bausteinen (werden Teil der Phrase)
 _CONNECTOR_RE = re.compile(
     r"^[\s,]*(?:am|um|ab|bis|zur|zum|der|den|dem|die|das|des|"
-    r"nächste[nr]?|kommende[nr]?|diese[ns]?|früh|vormittags|mittags|nachmittags|abends)?[\s,.]*",
+    r"nächste[nr]?|kommende[nr]?|diese[ns]?|jeden?|früh|vormittags|mittags|nachmittags|abends)?[\s,.]*",
     re.IGNORECASE,
 )
 
@@ -114,12 +117,13 @@ def find_date_phrase(text: str) -> tuple[str | None, int]:
                 if nb:
                     cur_end = nb[1]
                     merged = True
-            # nach links (z. B. "nächsten Freitag")
+            # nach links (z. B. "nächsten Freitag", "jeden Montag")
             before = text[:cur_start].rstrip()
             wm = re.search(r"(\b(?:am|um|ab|bis|zur|zum)\s+)?$",
                            before, re.IGNORECASE)
             lm = re.search(
-                r"\b(?:nächste[nr]?|kommende[nr]?|diese[ns]?)\s*$", before, re.IGNORECASE
+                r"\b(?:nächste[nr]?|kommende[nr]?|diese[ns]?|jeden?|alle\s+\d+)\s*$",
+                before, re.IGNORECASE
             )
             if lm:
                 cur_start = lm.start()
@@ -173,8 +177,8 @@ def resolve_phrase(
     def with_time(base: datetime) -> datetime:
         return base.replace(hour=hh, minute=mm, second=0, microsecond=0)
 
-    # "in N tagen/wochen/stunden/minuten"
-    m = re.search(r"in\s+(\d+)\s+(tagen?|wochen?|stunden?|minuten?)", p)
+    # "in N tagen/wochen/stunden/minuten" bzw. "alle N tage/wochen"
+    m = re.search(r"(?:in|alle)\s+(\d+)\s+(tagen?|wochen?|stunden?|minuten?)", p)
     if m:
         amount = int(m.group(1))
         unit = m.group(2)
@@ -263,6 +267,33 @@ def resolve_phrase(
             return with_time(base), explicit_time
         except ValueError:
             pass
+
+    # Reines "<tag>." (z. B. "monatlich am 15.") → Tag im aktuellen oder
+    # nächsten Monat, nie in der Vergangenheit.
+    if not re.search(r"\d{1,2}\.\d{1,2}", p):
+        m = re.search(r"\b(\d{1,2})\.", p)
+        if m:
+            day = int(m.group(1))
+            if 1 <= day <= 31:
+                candidate_year, candidate_month = now.year, now.month
+                base = None
+                for _ in range(13):
+                    try:
+                        cand = now.replace(
+                            year=candidate_year, month=candidate_month, day=day,
+                            hour=0, minute=0,
+                        )
+                        if cand >= now.replace(hour=0, minute=0):
+                            base = cand
+                            break
+                    except ValueError:
+                        pass
+                    candidate_month += 1
+                    if candidate_month > 12:
+                        candidate_month = 1
+                        candidate_year += 1
+                if base is not None:
+                    return with_time(base), explicit_time
 
     # Reine Uhrzeit ohne Tagesbezug → heute (oder morgen, falls schon vorbei)
     if explicit_time and re.fullmatch(r"[\d:.\s,uhr]+", p):
