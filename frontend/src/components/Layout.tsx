@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../lib/auth";
@@ -16,6 +16,8 @@ export function Layout({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const location = useLocation();
   const [showCapture, setShowCapture] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
   useSSE();
 
   // Aktueller Task-View aus der URL (z. B. /tasks/today → "today")
@@ -23,6 +25,8 @@ export function Layout({ children }: { children: ReactNode }) {
   // Umschalter zeigen immer das jeweils andere Ziel
   const isToday = currentView === "today";
   const isWeek = currentView === "week";
+  const onSettingsPage = location.pathname.startsWith("/settings");
+  const onAdminPage = location.pathname.startsWith("/admin");
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -32,11 +36,24 @@ export function Layout({ children }: { children: ReactNode }) {
         setShowCapture((s) => !s);
       } else if (e.key === "Escape") {
         setShowCapture(false);
+        setMenuOpen(false);
       }
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
+
+  // Dropdown schließen bei Klick außerhalb
+  useEffect(() => {
+    if (!menuOpen) return;
+    function onMouseDown(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", onMouseDown);
+    return () => document.removeEventListener("mousedown", onMouseDown);
+  }, [menuOpen]);
 
   return (
     <div className="min-h-screen">
@@ -94,24 +111,6 @@ export function Layout({ children }: { children: ReactNode }) {
             >
               {t("nav.reports")}
             </NavLink>
-            <NavLink
-              to="/settings"
-              className={({ isActive }) =>
-                `tab ${isActive ? "tab-active" : ""}`
-              }
-            >
-              {t("nav.settings")}
-            </NavLink>
-            {user?.is_admin && (
-              <NavLink
-                to="/admin"
-                className={({ isActive }) =>
-                  `tab ${isActive ? "tab-active" : ""}`
-                }
-              >
-                Admin
-              </NavLink>
-            )}
           </nav>
           <div className="ml-auto flex shrink-0 items-center gap-2 text-sm sm:gap-3">
             <span
@@ -130,7 +129,6 @@ export function Layout({ children }: { children: ReactNode }) {
                   : `Ollama: ${health?.ollama ?? "?"}`
               }
             />
-            <span className="hidden text-stone-500 sm:inline">{user?.display_name || user?.username}</span>
             <span className="hidden rounded bg-stone-100 px-1.5 py-0.5 font-mono text-xs text-stone-500 dark:bg-stone-800 dark:text-stone-400 md:inline">
               v{version?.app ?? "?"}
             </span>
@@ -148,15 +146,50 @@ export function Layout({ children }: { children: ReactNode }) {
                 EN
               </button>
             </div>
-            <button
-              onClick={async () => {
-                await logout();
-                navigate("/login");
-              }}
-              className="btn"
-            >
-              {t("nav.logout")}
-            </button>
+            {/* Nutzermenü: Einstellungen / Admin / Abmelden */}
+            <div ref={menuRef} className="relative">
+              <button
+                onClick={() => setMenuOpen((o) => !o)}
+                className={`flex items-center gap-1 whitespace-nowrap ${
+                  onSettingsPage || onAdminPage || menuOpen ? "tab-active" : ""
+                } tab`}
+              >
+                <span>{user?.display_name || user?.username}</span>
+                <span className={`inline-block transition-transform text-[10px] ${menuOpen ? "rotate-180" : ""}`}>
+                  ▾
+                </span>
+              </button>
+              {menuOpen && (
+                <div className="absolute right-0 top-full z-50 mt-1 min-w-[10rem] overflow-hidden rounded border border-stone-200 bg-white py-1 shadow-lg dark:border-stone-700 dark:bg-stone-900">
+                  <Link
+                    to="/settings"
+                    onClick={() => setMenuOpen(false)}
+                    className="block px-4 py-2 text-sm hover:bg-stone-100 dark:hover:bg-stone-800"
+                  >
+                    ⚙ {t("nav.settings")}
+                  </Link>
+                  {user?.is_admin && (
+                    <Link
+                      to="/admin"
+                      onClick={() => setMenuOpen(false)}
+                      className="block px-4 py-2 text-sm hover:bg-stone-100 dark:hover:bg-stone-800"
+                    >
+                      🛡 {t("nav.admin")}
+                    </Link>
+                  )}
+                  <button
+                    onClick={async () => {
+                      setMenuOpen(false);
+                      await logout();
+                      navigate("/login");
+                    }}
+                    className="block w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-stone-100 dark:hover:bg-stone-800"
+                  >
+                    ↪ {t("nav.logout")}
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </header>
