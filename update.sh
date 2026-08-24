@@ -31,7 +31,7 @@ BUMP="none"
 usage() {
     cat <<EOF
 Usage: $0 [optionen]
-   --dry-run           Zeigt an, was passieren würde, ohne Änderungen
+  --dry-run          Zeigt an, was passieren würde, ohne Änderungen
   --skip-frontend    Frontend-Build überspringen
   --skip-migrations  DB-Migrationen überspringen
   --bump LEVEL       Versions-Schritt: patch, minor, major (Default: kein Bump)
