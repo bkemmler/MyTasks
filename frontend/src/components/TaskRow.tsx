@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import clsx from "clsx";
-import { format, parseISO } from "date-fns";
+import { addDays, format, parseISO } from "date-fns";
 import { de } from "date-fns/locale";
 import { useCategories, useCompleteTask, useConfirmReview, useDeleteTask, useReparse, useUpdateTask, type Task } from "../lib/queries";
 import { dueLabel } from "../pages/Tasks";
@@ -511,28 +511,46 @@ function DateTimeField({
     );
   }
 
+  const shiftDays = (n: number) => {
+    // Mit Datum: Uhrzeit bleibt, Tag +N. Ohne Datum: heute+N um 00:00.
+    const base = value ? parseISO(value) : new Date();
+    if (!value) base.setHours(0, 0, 0, 0);
+    onSave(format(addDays(base, n), "yyyy-MM-dd'T'HH:mm:ss"));
+  };
+
   return (
     <div>
       <Label>{label}</Label>
-      <button
-        onClick={onEdit}
-        className="flex w-full items-center gap-2 rounded border border-transparent px-2 py-1.5 text-left text-sm hover:border-stone-300 dark:hover:border-stone-700"
-      >
-        <span className="text-stone-400">📅</span>
-        <span>{value ? format(parseISO(value), "dd.MM.yyyy HH:mm", { locale: de }) : <span className="text-stone-400">kein Datum</span>}</span>
-        {value && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onSave(null);
-            }}
-            className="ml-auto text-xs text-stone-400 hover:text-red-600"
-            title="Datum entfernen"
-          >
-            ✕
-          </button>
-        )}
-      </button>
+      <div className="flex items-center gap-1 rounded px-2 py-1 text-sm">
+        <button
+          onClick={onEdit}
+          className="flex flex-1 items-center gap-2 rounded border border-transparent py-0.5 text-left hover:border-stone-300 dark:hover:border-stone-700"
+        >
+          <span className="text-stone-400">📅</span>
+          <span>{value ? format(parseISO(value), "dd.MM.yyyy HH:mm", { locale: de }) : <span className="text-stone-400">kein Datum</span>}</span>
+        </button>
+        <div className="flex gap-1">
+          {[1, 2, 3].map((n) => (
+            <button
+              key={n}
+              onClick={() => shiftDays(n)}
+              className="btn text-xs"
+              title={`Fälligdatum um ${n} Tag${n > 1 ? "e" : ""} verschieben`}
+            >
+              +{n}
+            </button>
+          ))}
+          {value && (
+            <button
+              onClick={() => onSave(null)}
+              className="btn text-xs text-stone-400 hover:text-red-600"
+              title="Datum entfernen"
+            >
+              ✕
+            </button>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
