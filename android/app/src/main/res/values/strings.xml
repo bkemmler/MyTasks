@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">MyTasks</string>
+
+    <!-- Settings -->
+    <string name="settings_intro">Verbinde dich mit MyTasks über Pangolin. Die Tokens werden verschlüsselt auf diesem Gerät gespeichert und nur als Request-Header an den konfigurierten Server gesendet.</string>
+    <string name="label_server_url">Server-URL (HTTPS)</string>
+    <string name="label_token_id">P-Access-Token-Id</string>
+    <string name="label_token">P-Access-Token</string>
+    <string name="btn_connect_save">Verbinden &amp; speichern</string>
+    <string name="token_stored_placeholder">gespeichert — leer lassen = unverändert</string>
+    <string name="status_testing">Teste Verbindung…</string>
+    <string name="error_https_required">Die URL muss mit https:// beginnen.</string>
+    <string name="error_token_id_missing">Bitte P-Access-Token-Id angeben.</string>
+    <string name="error_token_missing">Bitte P-Access-Token angeben.</string>
+    <string name="error_token_rejected">Token abgelehnt (HTTP %1$d). Token-Id und Token in Pangolin prüfen.</string>
+    <string name="error_unreachable">Server nicht erreichbar: %1$s</string>
+
+    <!-- Main -->
+    <string name="retry">Erneut versuchen</string>
+    <string name="open_settings">Konfiguration öffnen</string>
+    <string name="error_token_rejected_short">Token ungültig oder abgelaufen. Bitte Konfiguration aktualisieren.</string>
+</resources>
