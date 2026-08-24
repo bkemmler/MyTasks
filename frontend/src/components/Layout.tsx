@@ -18,11 +18,11 @@ export function Layout({ children }: { children: ReactNode }) {
   const [showCapture, setShowCapture] = useState(false);
   useSSE();
 
-  // Aktueller Task-View aus der URL (z. B. /tasks/heute → "heute")
-  const currentView = location.pathname.match(/^\/tasks\/(\w+)/)?.[1] ?? "";
+  // Aktueller Task-View aus der URL (z. B. /tasks/today → "today")
+  const currentView = location.pathname.match(/^\/tasks\/([\w-]+)/)?.[1] ?? "";
   // Umschalter zeigen immer das jeweils andere Ziel
-  const isToday = currentView === "heute";
-  const isWeek = currentView === "woche";
+  const isToday = currentView === "today";
+  const isWeek = currentView === "week";
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -47,15 +47,15 @@ export function Layout({ children }: { children: ReactNode }) {
           </Link>
           <nav className="flex min-w-0 flex-1 gap-1 overflow-x-auto">
             {/* Umschalter Heute/Morgen: zeigt das jeweils andere Ziel */}
-            <Link to={isToday ? "/tasks/morgen" : "/tasks/heute"} className="tab whitespace-nowrap">
+            <Link to={isToday ? "/tasks/tomorrow" : "/tasks/today"} className="tab whitespace-nowrap">
               {isToday ? t("nav.tomorrow") : t("nav.today")}
             </Link>
             {/* Umschalter Woche/Nächste */}
-            <Link to={isWeek ? "/tasks/naechste_woche" : "/tasks/woche"} className="tab whitespace-nowrap">
+            <Link to={isWeek ? "/tasks/next-week" : "/tasks/week"} className="tab whitespace-nowrap">
               {isWeek ? t("nav.next") : t("nav.week")}
             </Link>
             <NavLink
-              to="/tasks/eingang"
+              to="/tasks/inbox"
               className={({ isActive }) =>
                 `tab ${isActive ? "tab-active" : ""}`
               }
@@ -63,7 +63,7 @@ export function Layout({ children }: { children: ReactNode }) {
               {t("nav.inbox")}
             </NavLink>
             <NavLink
-              to="/tasks/pruefung"
+              to="/tasks/review"
               className={({ isActive }) =>
                 `tab ${isActive ? "tab-active" : ""}`
               }
@@ -71,7 +71,7 @@ export function Layout({ children }: { children: ReactNode }) {
               ⚠
             </NavLink>
             <NavLink
-              to="/tasks/alle"
+              to="/tasks/all"
               className={({ isActive }) =>
                 `tab ${isActive ? "tab-active" : ""}`
               }

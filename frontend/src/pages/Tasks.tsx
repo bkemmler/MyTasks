@@ -21,29 +21,23 @@ import { useI18n } from "../lib/i18n";
 import type { Status } from "../lib/queries";
 
 type View =
-  | "heute"
-  | "morgen"
-  | "woche"
-  | "naechste_woche"
-  | "ueberfaellig"
-  | "eingang"
-  | "pruefung"
-  | "alle"
-  | "erledigt";
+  | "today"
+  | "tomorrow"
+  | "week"
+  | "next-week"
+  | "overdue"
+  | "inbox"
+  | "review"
+  | "all"
+  | "completed";
 
 const isInRange = (d: Date, start: Date, end: Date): boolean => d >= start && d <= end;
-
-const VIEW_KEYS: Record<View, string> = {
-  heute: "heute", morgen: "morgen", woche: "woche", naechste_woche: "naechste_woche",
-  ueberfaellig: "ueberfaellig", eingang: "eingang", pruefung: "pruefung",
-  alle: "alle", erledigt: "erledigt",
-};
 
 export function Tasks() {
   const { t } = useI18n();
   const { t: tStatus } = useTranslation();
   const params = useParams<{ view?: string }>();
-  const view = (params.view ?? "heute") as View;
+  const view = (params.view ?? "today") as View;
   const [statusFilter, setStatusFilter] = useState<Status | "">("");
   const [categoryId, setCategoryId] = useState<number | "">("");
   const [priority, setPriority] = useState<number | "">("");
@@ -85,8 +79,8 @@ export function Tasks() {
     if (statusFilter) p.status = statusFilter;
     if (categoryId !== "") p.category_id = categoryId;
     if (priority !== "") p.priority = priority;
-    if (view === "pruefung") p.needs_review = true;
-    if (view === "erledigt") {
+    if (view === "review") p.needs_review = true;
+    if (view === "completed") {
       p.status = "erledigt";
       p.include_completed = true;
     }
@@ -108,7 +102,7 @@ export function Tasks() {
 
     return tasks.filter((t) => {
       const isOpen = t.status !== "erledigt" && t.status !== "abgebrochen";
-      if (!isOpen && view !== "erledigt" && !showCompleted && !recentlyCompleted.has(t.uuid)) return false;
+      if (!isOpen && view !== "completed" && !showCompleted && !recentlyCompleted.has(t.uuid)) return false;
 
       const due = t.due_at ? parseISO(t.due_at) : null;
       const start = t.start_at ? parseISO(t.start_at) : null;
@@ -117,27 +111,27 @@ export function Tasks() {
       // wenn der Nutzer "Ohne Fälligkeit" aktiviert hat.
       if (showUndated && !due && !start) return true;
 
-      if (view === "heute") {
+      if (view === "today") {
         if (due && (isToday(due) || isPast(due))) return true;
         if (start && start <= now) return true;
         return false;
       }
-      if (view === "morgen") {
+      if (view === "tomorrow") {
         if (due && isInRange(due, tomorrowStart, tomorrowEnd)) return true;
         return false;
       }
-      if (view === "woche") {
+      if (view === "week") {
         if (due && isInRange(due, thisWeekStart, thisWeekEnd)) return true;
         return false;
       }
-      if (view === "naechste_woche") {
+      if (view === "next-week") {
         if (due && isInRange(due, nextWeekStart, nextWeekEnd)) return true;
         return false;
       }
-      if (view === "ueberfaellig") {
+      if (view === "overdue") {
         return due !== null && isPast(due);
       }
-      if (view === "eingang") {
+      if (view === "inbox") {
         return !due && t.status !== "erledigt" && t.status !== "abgebrochen";
       }
       return true;
@@ -153,7 +147,7 @@ export function Tasks() {
       if (t.waiting_for?.toLowerCase().includes(q)) return true;
       return false;
     }).sort((a, b) => {
-      if (view === "eingang") {
+      if (view === "inbox") {
         return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
       }
       if (sortBy === "priority") return a.priority - b.priority;
@@ -184,7 +178,7 @@ export function Tasks() {
       <div className="mb-4">
         <CaptureInput
           placeholder={t("capture.newTaskPlaceholder")}
-          viewTitle={t(`tasks.viewTitle.${VIEW_KEYS[view]}`)}
+          viewTitle={t(`tasks.viewTitle.${view}`)}
           taskCount={filtered.length}
         />
       </div>
