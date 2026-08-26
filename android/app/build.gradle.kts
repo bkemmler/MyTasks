@@ -5,12 +5,12 @@ plugins {
 
 android {
     namespace = "de.mytasks.app"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "de.mytasks.app"
         minSdk = 26
-        targetSdk = 34
+        targetSdk = 35
         versionCode = 2
         versionName = "1.0.1"
     }

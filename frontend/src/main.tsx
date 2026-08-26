@@ -7,6 +7,11 @@ import { AuthProvider } from "./lib/auth";
 import "./i18n";
 import "./index.css";
 
+// Service Worker: extern registriert damit CSP script-src 'self' genügt
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("/sw.js");
+}
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
