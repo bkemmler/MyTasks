@@ -36,45 +36,49 @@ async def _migrate_schema(conn) -> None:
     try:
         await conn.execute(text("SELECT original_due_at FROM tasks LIMIT 0"))
     except Exception:
-        await conn.execute(
-            text("ALTER TABLE tasks ADD COLUMN original_due_at TEXT")
-        )
+        await conn.execute(text("ALTER TABLE tasks ADD COLUMN original_due_at TEXT"))
     try:
         await conn.execute(text("SELECT notes FROM tasks LIMIT 0"))
     except Exception:
-        await conn.execute(
-            text("ALTER TABLE tasks ADD COLUMN notes TEXT")
-        )
+        await conn.execute(text("ALTER TABLE tasks ADD COLUMN notes TEXT"))
 
 
 async def _create_fts(conn) -> None:
     try:
         await conn.execute(text("SELECT 1 FROM tasks_fts LIMIT 0"))
     except Exception:
-        await conn.execute(text("""
+        await conn.execute(
+            text("""
             CREATE VIRTUAL TABLE IF NOT EXISTS tasks_fts USING fts5(
                 title, description, source_text, waiting_for, location,
                 content='tasks', content_rowid='id',
                 tokenize='unicode61 remove_diacritics 2'
             )
-        """))
-        await conn.execute(text("""
+        """)
+        )
+        await conn.execute(
+            text("""
             CREATE TRIGGER IF NOT EXISTS tasks_fts_insert AFTER INSERT ON tasks BEGIN
                 INSERT INTO tasks_fts(rowid, title, description, source_text, waiting_for, location)
                 VALUES (new.id, new.title, new.description, new.source_text, new.waiting_for, new.location);
             END
-        """))
-        await conn.execute(text("""
+        """)
+        )
+        await conn.execute(
+            text("""
             CREATE TRIGGER IF NOT EXISTS tasks_fts_delete AFTER DELETE ON tasks BEGIN
                 INSERT INTO tasks_fts(tasks_fts, rowid, title, description, source_text, waiting_for, location)
                 VALUES ('delete', old.id, old.title, old.description, old.source_text, old.waiting_for, old.location);
             END
-        """))
-        await conn.execute(text("""
+        """)
+        )
+        await conn.execute(
+            text("""
             CREATE TRIGGER IF NOT EXISTS tasks_fts_update AFTER UPDATE ON tasks BEGIN
                 INSERT INTO tasks_fts(tasks_fts, rowid, title, description, source_text, waiting_for, location)
                 VALUES ('delete', old.id, old.title, old.description, old.source_text, old.waiting_for, old.location);
                 INSERT INTO tasks_fts(rowid, title, description, source_text, waiting_for, location)
                 VALUES (new.id, new.title, new.description, new.source_text, new.waiting_for, new.location);
             END
-        """))
+        """)
+        )

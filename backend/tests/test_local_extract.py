@@ -132,7 +132,7 @@ class TestDatePhraseResolution:
     NOW = datetime(2026, 8, 24, 10, 0)  # Montag, 24.08.2026
 
     def _resolve(self, text: str):
-        r = local_extract(text)
+        r = local_extract(text, now=self.NOW)
         return r["due_at"], r["due_is_all_day"], r["title"]
 
     def test_morgen_mit_uhrzeit(self):
