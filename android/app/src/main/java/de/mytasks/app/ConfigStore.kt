@@ -7,7 +7,11 @@ import androidx.security.crypto.MasterKey
 import java.net.URL
 
 /**
- * Verschlüsselte Konfiguration: Server-URL + Pangolin-Access-Token.
+ * Verschlüsselte Konfiguration: Server-URL + Anmeldemodus.
+ *
+ * Modi: "token" (Pangolin-Access-Token per Request-Header, inkl.
+ * Share-Links) oder "sso" (Pangolin-SSO-Login im WebView, Session
+ * via Cookies — keine Tokens nötig).
  *
  * EncryptedSharedPreferences mit Hardware-gestütztem MasterKey;
  * allowBackup=false im Manifest verhindert zusätzlich die Ausleitung
@@ -41,8 +45,18 @@ class ConfigStore(context: Context) {
         get() = prefs.getString(KEY_TOKEN, "") ?: ""
         set(value) = prefs.edit().putString(KEY_TOKEN, value.trim()).apply()
 
+    var authMode: String
+        get() = prefs.getString(KEY_AUTH_MODE, MODE_TOKEN) ?: MODE_TOKEN
+        set(value) = prefs.edit().putString(KEY_AUTH_MODE, value).apply()
+
+    val useSso: Boolean
+        get() = authMode == MODE_SSO
+
+    val hasTokens: Boolean
+        get() = tokenId.isNotBlank() && token.isNotBlank()
+
     val isConfigured: Boolean
-        get() = serverUrl.startsWith("https://") && tokenId.isNotBlank() && token.isNotBlank()
+        get() = serverUrl.startsWith("https://") && (useSso || hasTokens)
 
     /** Host-Allowlist für Header-Injection: nur dieser Host bekommt Tokens. */
     val allowedHost: String?
@@ -57,8 +71,12 @@ class ConfigStore(context: Context) {
     }
 
     companion object {
+        const val MODE_TOKEN = "token"
+        const val MODE_SSO = "sso"
+
         private const val KEY_URL = "server_url"
         private const val KEY_TOKEN_ID = "p_access_token_id"
         private const val KEY_TOKEN = "p_access_token"
+        private const val KEY_AUTH_MODE = "auth_mode"
     }
 }

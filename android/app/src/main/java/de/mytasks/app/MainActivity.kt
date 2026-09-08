@@ -9,6 +9,7 @@ import android.view.View
 import android.webkit.JavascriptInterface
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
+import android.webkit.CookieManager
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.Button
@@ -22,13 +23,18 @@ import java.util.concurrent.TimeUnit
 /**
  * Hauptansicht: WebView auf MyTasks hinter Pangolin.
  *
- * Header-Strategie (P-Access-Token-Id / P-Access-Token):
+ * Modus "token" — Header-Strategie (P-Access-Token-Id / P-Access-Token):
  *  1. Navigation:        loadUrl(url, headers)
  *  2. GET-Subressourcen: shouldInterceptRequest → OkHttp mit Headern → WebResourceResponse
  *  3. fetch/XHR aus JS:  inject.js patcht window.fetch + XMLHttpRequest (POST-Bodies
  *                        sind im Intercept nicht zugreifbar)
+ *  Header werden ausschließlich an den konfigurierten Host gesendet,
+ *  externe Hosts öffnen den Systembrowser.
  *
- * Header werden ausschließlich an den konfigurierten Host gesendet.
+ * Modus "sso" — Pangolin-SSO-Login direkt im WebView:
+ *  Keine Header, keine Intercepts. Die Sitzung läuft über Cookies;
+ *  alle Navigationen (inkl. Pangolin-Anmeldeseite auf fremdem Host)
+ *  bleiben im WebView, bis die App erreicht ist.
  */
 class MainActivity : AppCompatActivity() {
 
@@ -70,6 +76,8 @@ class MainActivity : AppCompatActivity() {
 
         webView.settings.javaScriptEnabled = true
         webView.settings.domStorageEnabled = true   // localStorage-Tokens der SPA
+        // SSO-Modus braucht Session-Cookies (Pangolin-Anmeldung)
+        CookieManager.getInstance().setAcceptCookie(true)
         webView.settings.userAgentString =
             "${webView.settings.userAgentString} MyTasksAndroid/${BuildConfig.VERSION_NAME}"
 
@@ -83,7 +91,11 @@ class MainActivity : AppCompatActivity() {
                 view: WebView,
                 request: WebResourceRequest,
             ): Boolean {
-                // Externe Hosts im Systembrowser statt im authentifizierten WebView
+                // SSO: Anmelde-Flow läuft über Pangolin-Hosts — alles bleibt
+                // im WebView, bis die Session steht (keine Geheimnisse im Spiel).
+                if (config.useSso) return false
+                // Token-Modus: Externe Hosts im Systembrowser statt im
+                // authentifizierten WebView
                 return request.url.host != config.allowedHost
             }
 
@@ -91,6 +103,8 @@ class MainActivity : AppCompatActivity() {
                 view: WebView,
                 request: WebResourceRequest,
             ): WebResourceResponse? {
+                // SSO: keine Header zu injizieren — WebView + Cookies genügen
+                if (!config.hasTokens) return null
                 val method = request.method.uppercase()
                 if (method != "GET" && method != "HEAD") return null
                 if (request.url.host != config.allowedHost) return null
@@ -135,9 +149,11 @@ class MainActivity : AppCompatActivity() {
     private val injectScript: String by lazy {
         val js = assets.open("inject.js").bufferedReader().use { it.readText() }
         // Globale Variablen vor dem Patch setzen (Tokens nur im WebView-Prozess,
-        // niemals in Logs oder Cookies).
+        // niemals in Logs oder Cookies). SSO: leerer Host → inject.js
+        // beendet sich sofort, nativer fetch/EventSource mit Cookies läuft.
+        val signingHost = if (config.hasTokens) config.allowedHost ?: "" else ""
         val globals = """
-            window.__MT_HOST = ${jsonString(config.allowedHost ?: "")};
+            window.__MT_HOST = ${jsonString(signingHost)};
             window.__MT_TOKEN_ID = ${jsonString(config.tokenId)};
             window.__MT_TOKEN = ${jsonString(config.token)};
         """.trimIndent()
@@ -148,14 +164,20 @@ class MainActivity : AppCompatActivity() {
         "\"" + s.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n") + "\""
 
     private fun loadApp() {
-        // Schicht 1: Navigation mit Headern
-        webView.loadUrl(
-            config.serverUrl,
-            mapOf(
-                "P-Access-Token-Id" to config.tokenId,
-                "P-Access-Token" to config.token,
-            ),
-        )
+        if (config.useSso || !config.hasTokens) {
+            // SSO: plain laden — Pangolin leitet ggf. zur Anmeldung um,
+            // danach landet die Session-Cookie-gestützt auf der App.
+            webView.loadUrl(config.serverUrl)
+        } else {
+            // Schicht 1: Navigation mit Headern
+            webView.loadUrl(
+                config.serverUrl,
+                mapOf(
+                    "P-Access-Token-Id" to config.tokenId,
+                    "P-Access-Token" to config.token,
+                ),
+            )
+        }
     }
 
     /** Schicht 2: GET/HEAD selbst per OkHttp ausführen, Header injizieren. */
@@ -198,7 +220,13 @@ class MainActivity : AppCompatActivity() {
     /** Pangolin-Ablehnung erkennen und zum Config-Screen führen. */
     private fun handleAuthRejected() {
         runOnUiThread {
-            errorView.text = getString(R.string.error_token_rejected_short)
+            errorView.text = getString(
+                if (config.useSso) {
+                    R.string.error_sso_rejected_short
+                } else {
+                    R.string.error_token_rejected_short
+                },
+            )
             errorBox.visibility = View.VISIBLE
         }
     }

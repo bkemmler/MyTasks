@@ -23,7 +23,37 @@
             android:layout_height="wrap_content"
             android:text="@string/settings_intro"
             android:textSize="14sp"
-            android:layout_marginBottom="24dp" />
+            android:layout_marginBottom="16dp" />
+
+        <RadioGroup
+            android:id="@+id/auth_mode_group"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginBottom="16dp">
+
+            <RadioButton
+                android:id="@+id/mode_token"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/mode_token"
+                android:checked="true" />
+
+            <RadioButton
+                android:id="@+id/mode_sso"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/mode_sso" />
+        </RadioGroup>
+
+        <TextView
+            android:id="@+id/sso_hint"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/sso_hint"
+            android:textSize="13sp"
+            android:layout_marginBottom="16dp"
+            android:visibility="gone" />
 
         <TextView
             style="@style/FormLabel"
@@ -36,25 +66,32 @@
             android:inputType="textUri"
             android:autofillHints="url" />
 
-        <TextView
-            style="@style/FormLabel"
-            android:text="@string/label_token_id" />
-        <EditText
-            android:id="@+id/input_token_id"
+        <LinearLayout
+            android:id="@+id/token_group"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:inputType="text"
-            android:autofillHints="none" />
+            android:orientation="vertical">
 
-        <TextView
-            style="@style/FormLabel"
-            android:text="@string/label_token" />
-        <EditText
-            android:id="@+id/input_token"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:inputType="textPassword"
-            android:autofillHints="password" />
+            <TextView
+                style="@style/FormLabel"
+                android:text="@string/label_token_id" />
+            <EditText
+                android:id="@+id/input_token_id"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="text"
+                android:autofillHints="none" />
+
+            <TextView
+                style="@style/FormLabel"
+                android:text="@string/label_token" />
+            <EditText
+                android:id="@+id/input_token"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textPassword"
+                android:autofillHints="password" />
+        </LinearLayout>
 
         <ProgressBar
             android:id="@+id/progress"

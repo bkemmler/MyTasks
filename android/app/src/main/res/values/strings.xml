@@ -3,7 +3,10 @@
     <string name="app_name">MyTasks</string>
 
     <!-- Settings -->
-    <string name="settings_intro">Verbinde dich mit MyTasks über Pangolin. Die Tokens werden verschlüsselt auf diesem Gerät gespeichert und nur als Request-Header an den konfigurierten Server gesendet.</string>
+    <string name="settings_intro">Verbinde dich mit MyTasks über Pangolin — entweder per Access-Token (z. B. aus einem Share-Link) oder per Pangolin-SSO-Login.</string>
+    <string name="mode_token">Access-Token (Share-Link)</string>
+    <string name="mode_sso">Pangolin-SSO (Login im Browser-Fenster)</string>
+    <string name="sso_hint">Im SSO-Modus sind keine Tokens nötig. Nach dem Speichern meldest du dich einmalig auf der Pangolin-Seite an — die Sitzung bleibt auf dem Gerät.</string>
     <string name="label_server_url">Server-URL (HTTPS)</string>
     <string name="label_token_id">P-Access-Token-Id</string>
     <string name="label_token">P-Access-Token</string>
@@ -15,9 +18,11 @@
     <string name="error_token_missing">Bitte P-Access-Token angeben.</string>
     <string name="error_token_rejected">Token abgelehnt (HTTP %1$d). Token-Id und Token in Pangolin prüfen.</string>
     <string name="error_unreachable">Server nicht erreichbar: %1$s</string>
+    <string name="error_sso_rejected">Anmeldung erforderlich (HTTP %1$d). Pangolin-SSO für diese Ressource prüfen.</string>
 
     <!-- Main -->
     <string name="retry">Erneut versuchen</string>
     <string name="open_settings">Konfiguration öffnen</string>
     <string name="error_token_rejected_short">Token ungültig oder abgelaufen. Bitte Konfiguration aktualisieren.</string>
+    <string name="error_sso_rejected_short">Sitzung abgelaufen. Bitte erneut anmelden.</string>
 </resources>
