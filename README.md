@@ -2,7 +2,7 @@
 
 Self-hosted task application (FastAPI + SQLite + React) that turns free-form text into structured tasks — primarily via local rule-based extraction, with an optional Ollama model as fallback.
 
-**Version:** 0.8.0
+**Version:** 0.8.6 (Server) · Android-App 1.2.0 (separates Release, siehe unten)
 
 ## Requirements
 
@@ -78,10 +78,18 @@ sudo ./uninstall.sh
 # Database is backed up for safety
 ```
 
+## Android app
+
+A lightweight native WebView wrapper for use behind [Pangolin](https://github.com/fosrl/pangolin) — the web UI, no separate feature set. Two login modes: **Access-Token** (e.g. from a Pangolin share link, sent as `P-Access-Token-Id` / `P-Access-Token` request headers) or **Pangolin-SSO** (one-time login in the app window, session via cookie). Tokens are stored in EncryptedSharedPreferences, HTTPS-only, `allowBackup=false`.
+
+- Current version: **1.2.0** (`versionCode 4`, minSdk 26 / Android 8.0+)
+- Download the signed debug APK from [GitHub Releases](https://github.com/bkemmler/MyTasks/releases) (`MyTasks-1.2.0-debug.apk`), uninstall any previous build first if the signature changed, then enter server URL + credentials in the config screen
+- Details (auth modes, security, build in Android Studio): [`android/README.md`](android/README.md)
+
 ## Architecture
 
 ```
-Browser → http://server:5000/
+Browser / Android WebView → http://server:5000/ (or via Pangolin)
          ├── FastAPI REST API (/api/v1/)
          ├── React SPA + PWA (static files)
          └── SSE (/api/v1/events) — real-time updates

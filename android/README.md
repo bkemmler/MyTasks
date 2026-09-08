@@ -1,5 +1,7 @@
 # MyTasks Android-App
 
+**Version:** 1.2.0 (`versionCode 4`) — [GitHub Releases](https://github.com/bkemmler/MyTasks/releases)
+
 Schlanke WebView-App für MyTasks hinter [Pangolin](https://github.com/fosrl/pangolin) mit zwei Anmeldemodi: Access-Token oder Pangolin-SSO.
 
 ## Anmeldemodi
@@ -78,5 +80,5 @@ android/
 ## Voraussetzungen
 
 - Android 8.0+ (minSdk 26)
-- MyTasks hinter Pangolin mit aktiviertem Access-Token-Schutz auf der Ressource
+- MyTasks hinter Pangolin mit aktiviertem Schutz auf der Ressource (Access-Token- *oder* SSO-Auth — je nach gewähltem Anmeldemodus)
 - Gültiges TLS-Zertifikat (Let's Encrypt o. ä.) — selbstsignierte Zertifikate werden abgelehnt
