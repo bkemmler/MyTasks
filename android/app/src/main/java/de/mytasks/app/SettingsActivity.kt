@@ -184,24 +184,31 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     /**
-     * SSO-Modus: Test-HEAD ohne Header. Pangolin antwortet entweder mit
-     * der App (bereits gültige Session/Cookie) oder leitet zur Anmeldung
-     * um (Redirects werden gefolgt → 200 auf der Login-Seite = erreichbar).
-     * Nur ein direktes 401/403 bedeutet: SSO-Schutz greift anders als erwartet.
+     * SSO-Modus: Erreichbarkeits-Test ohne Header, als GET mit Browser-
+     * User-Agent (manche Gateways behandeln HEAD anders als GET).
+     *
+     * Entscheidend: Ein 401/403 oder Redirect zur Anmeldung ist hier
+     * KEIN Fehler — „noch nicht angemeldet" ist der Normalfall vor dem
+     * ersten Login. Das Login (Benutzer, Kennwort, MFA) findet danach im
+     * WebView der Hauptansicht statt. Nur wenn gar keine HTTP-Antwort
+     * kommt (Netzwerk-/TLS-Fehler), wird blockiert.
      */
     private fun testSsoConnection(url: String): TestResult {
         return try {
             val request = okhttp3.Request.Builder()
                 .url(url)
-                .head()
+                .header(
+                    "User-Agent",
+                    "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 " +
+                        "(KHTML, like Gecko) Chrome/120.0 Mobile Safari/537.36 " +
+                        "MyTasksAndroid",
+                )
+                .get()
                 .build()
 
-            client.newCall(request).execute().use { resp ->
-                when {
-                    resp.isSuccessful -> TestResult.Success
-                    resp.code == 401 || resp.code == 403 -> TestResult.Rejected(resp.code)
-                    else -> TestResult.Success
-                }
+            client.newCall(request).execute().use {
+                // Jede HTTP-Antwort = Server erreichbar → weiter zum WebView-Login
+                TestResult.Success
             }
         } catch (e: Exception) {
             TestResult.Unreachable(e.message ?: e.javaClass.simpleName)

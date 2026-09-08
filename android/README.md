@@ -45,8 +45,9 @@ Im **SSO-Modus** entfallen alle drei Schichten: Das WebView lädt plain, Pangoli
    - **Access-Token**: Server-URL + **P-Access-Token-Id** und **P-Access-Token** aus Pangolin
    - **Pangolin-SSO**: nur Server-URL — das Login erfolgt nach dem Speichern im App-Fenster
 3. „Verbinden & speichern" — die App macht einen Test-Request:
-   - ✅ Erfolg → Hauptansicht (SSO: ggf. erst Pangolin-Anmeldung im WebView)
-   - ❌ HTTP 401/403 → „Token abgelehnt" bzw. „Anmeldung erforderlich", Zugangsdaten/SSO-Schutz prüfen
+   - ✅ Erfolg → Hauptansicht
+   - **Access-Token**: ❌ HTTP 401/403 → „Token abgelehnt", Zugangsdaten prüfen
+   - **Pangolin-SSO**: Der Test prüft nur die Erreichbarkeit — ein 401 („noch nicht angemeldet") ist normal. Nach dem Speichern erscheint die Pangolin-Anmeldung (Benutzer, Kennwort, MFA) direkt im App-Fenster. Nur bei Netzwerk-/TLS-Fehlern wird blockiert.
 
 Tokens laufen ab? Die App erkennt das **automatisch** — sowohl beim Laden (HTTP 401/403 der Hauptseite) als auch mitten in der Sitzung (API-Calls der Weboberfläche werden über eine JS-Bridge überwacht). Es erscheint sofort das Token-Fenster; über ⚙ oben rechts kommst du jederzeit in die Konfiguration. Dort genügt es, nur das neue Token einzutragen — Server-URL und Token-Id bleiben erhalten, wenn die Felder leer bleiben. Im SSO-Modus genügt „Erneut versuchen" für eine frische Anmeldung.
 
