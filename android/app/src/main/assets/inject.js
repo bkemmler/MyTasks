@@ -50,7 +50,10 @@
                 if (typeof input === "string") {
                     promise = originalFetch.call(this, input, Object.assign({}, init, { headers: headers }));
                 } else {
-                    // Request-Objekt kann nicht mutieren → neu bauen
+                    // Request-Objekt kann nicht mutieren → neu bauen.
+                    // duplex:"half" ist in Chromium Pflicht, sobald der Body
+                    // ein Stream ist — ohne wirft new Request einen TypeError
+                    // („failed to fetch" an der Oberfläche).
                     var cloned = input.clone();
                     promise = originalFetch.call(
                         this,
@@ -58,6 +61,7 @@
                             method: cloned.method,
                             headers: headers,
                             body: ["GET", "HEAD"].indexOf(cloned.method) === -1 ? cloned.body : undefined,
+                            duplex: "half",
                             mode: cloned.mode,
                             credentials: cloned.credentials,
                             cache: cloned.cache,

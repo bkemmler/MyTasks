@@ -76,8 +76,14 @@ class MainActivity : AppCompatActivity() {
 
         webView.settings.javaScriptEnabled = true
         webView.settings.domStorageEnabled = true   // localStorage-Tokens der SPA
-        // SSO-Modus braucht Session-Cookies (Pangolin-Anmeldung)
-        CookieManager.getInstance().setAcceptCookie(true)
+        // SSO-Modus braucht Session-Cookies (Pangolin-Anmeldung).
+        // Third-Party-Cookies sind nötig, falls das Session-Cookie auf der
+        // Pangolin-Auth-Domain liegt und die API auf der Ressourcen-Domain.
+        // Im Token-Modus unbedenklich: Es werden nie Cookies für Auth genutzt
+        // (Header), WebView-Cookies enthalten dort keine Geheimnisse.
+        val cookieManager = CookieManager.getInstance()
+        cookieManager.setAcceptCookie(true)
+        cookieManager.setAcceptThirdPartyCookies(webView, true)
         webView.settings.userAgentString =
             "${webView.settings.userAgentString} MyTasksAndroid/${BuildConfig.VERSION_NAME}"
 
