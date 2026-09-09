@@ -16,6 +16,8 @@ import android.widget.Button
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.util.concurrent.TimeUnit
@@ -65,6 +67,15 @@ class MainActivity : AppCompatActivity() {
         if (!config.isConfigured) {
             startSettings(freshStart = true)
             return
+        }
+
+        // Edge-to-Edge (Pflicht ab targetSdk 35): Systemleisten als Padding
+        // aufs Root-Layout, damit WebView-Inhalt UND ⚙-Overlay unterhalb
+        // von Status-/Navigationsleiste sitzen statt darunter.
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.root)) { v, insets ->
+            val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            v.setPadding(bars.left, bars.top, bars.right, bars.bottom)
+            insets
         }
 
         webView = findViewById(R.id.webview)
