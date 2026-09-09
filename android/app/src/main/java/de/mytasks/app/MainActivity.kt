@@ -74,6 +74,11 @@ class MainActivity : AppCompatActivity() {
         settingsButton = findViewById(R.id.btn_open_settings)
         errorBox = findViewById(R.id.error_box)
 
+        // Nur in Debug-APKs: Remote-Debugging via Desktop-Chrome
+        // (chrome://inspect) — Console + Netzwerk-Tab zeigen die echte
+        // Fehlerzeile bei „failed to fetch". Release-Builds: aus.
+        WebView.setWebContentsDebuggingEnabled(BuildConfig.DEBUG)
+
         webView.settings.javaScriptEnabled = true
         webView.settings.domStorageEnabled = true   // localStorage-Tokens der SPA
         // SSO-Modus braucht Session-Cookies (Pangolin-Anmeldung).

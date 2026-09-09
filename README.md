@@ -2,7 +2,7 @@
 
 Self-hosted task application (FastAPI + SQLite + React) that turns free-form text into structured tasks — primarily via local rule-based extraction, with an optional Ollama model as fallback.
 
-**Version:** 0.8.6 (Server) · Android-App 1.2.0 (separates Release, siehe unten)
+**Version:** 0.8.7 (Server) · Android-App 1.2.3 (separates Release, siehe unten)
 
 ## Requirements
 

@@ -56,6 +56,7 @@ export async function api<T>(
   path: string,
   options: RequestInit = {},
 ): Promise<T> {
+  const method = options.method || "GET";
   const doFetch = async (): Promise<Response> => {
     const access = getAccessToken();
     const headers = new Headers(options.headers);
@@ -63,7 +64,14 @@ export async function api<T>(
     if (options.body && !headers.has("Content-Type")) {
       headers.set("Content-Type", "application/json");
     }
-    return fetch(`/api/v1${path}`, { ...options, headers });
+    try {
+      return await fetch(`/api/v1${path}`, { ...options, headers });
+    } catch (e) {
+      // Netzwerkfehler (DNS/TLS/Reset/CORS) mit Kontext statt nacktem
+      // „Failed to fetch" — entscheidend für WebView-Diagnose.
+      const reason = e instanceof Error ? e.message : String(e);
+      throw new Error(`Netzwerkfehler bei ${method} ${path}: ${reason}`);
+    }
   };
 
   let resp = await doFetch();
@@ -95,7 +103,12 @@ export async function apiRaw(path: string): Promise<Response> {
     const access = getAccessToken();
     const headers = new Headers();
     if (access) headers.set("Authorization", `Bearer ${access}`);
-    return fetch(`/api/v1${path}`, { headers });
+    try {
+      return await fetch(`/api/v1${path}`, { headers });
+    } catch (e) {
+      const reason = e instanceof Error ? e.message : String(e);
+      throw new Error(`Netzwerkfehler bei GET ${path}: ${reason}`);
+    }
   };
 
   let resp = await doFetch();
