@@ -1,6 +1,6 @@
 # MyTasks Android-App
 
-**Version:** 1.2.1 (`versionCode 5`) — [GitHub Releases](https://github.com/bkemmler/MyTasks/releases)
+**Version:** 1.2.2 (`versionCode 6`) — [GitHub Releases](https://github.com/bkemmler/MyTasks/releases)
 
 Schlanke WebView-App für MyTasks hinter [Pangolin](https://github.com/fosrl/pangolin) mit zwei Anmeldemodi: Access-Token oder Pangolin-SSO.
 
