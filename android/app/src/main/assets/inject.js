@@ -6,7 +6,10 @@
     "use strict";
 
     var HOST = window.__MT_HOST;
-    if (!HOST) return;
+    // SSO-Modus: HOST ist leer → keine Token-Signatur, aber fetch/XHR
+    // müssen Cookies mitsenden (credentials: 'include'), sonst fehlt
+    // die Pangolin-Session bei API-Calls → 302 zur Auth-Seite.
+    var SSO = !HOST;
 
     function shouldSign(url) {
         try {
@@ -37,39 +40,52 @@
                 var url = typeof input === "string"
                     ? input
                     : (input && input.url) || "";
-                if (!shouldSign(url)) {
+                var sign = shouldSign(url);
+                // SSO-Modus ohne passenden Host: keine Token-Header, aber
+                // Cookies mitsenden (credentials: 'include'), sonst fehlt
+                // die Pangolin-Session bei API-Calls → 302 zur Auth-Seite.
+                if (!sign && !SSO) {
                     return originalFetch.apply(this, arguments);
                 }
                 init = init || {};
-                var headers = new Headers(init.headers || (input && input.headers) || {});
-                if (!headers.has("P-Access-Token-Id")) {
-                    headers.set("P-Access-Token-Id", window.__MT_TOKEN_ID);
-                    headers.set("P-Access-Token", window.__MT_TOKEN);
+                var opts = Object.assign({}, init);
+                if (sign) {
+                    var headers = new Headers(init.headers || (input && input.headers) || {});
+                    if (!headers.has("P-Access-Token-Id")) {
+                        headers.set("P-Access-Token-Id", window.__MT_TOKEN_ID);
+                        headers.set("P-Access-Token", window.__MT_TOKEN);
+                    }
+                    opts.headers = headers;
+                }
+                if (SSO && !opts.credentials) {
+                    opts.credentials = "include";
                 }
                 var promise;
                 if (typeof input === "string") {
-                    promise = originalFetch.call(this, input, Object.assign({}, init, { headers: headers }));
+                    promise = originalFetch.call(this, input, opts);
                 } else {
                     // Request-Objekt kann nicht mutieren → neu bauen.
                     // duplex:"half" ist in Chromium Pflicht, sobald der Body
                     // ein Stream ist — ohne wirft new Request einen TypeError
                     // („failed to fetch" an der Oberfläche).
                     var cloned = input.clone();
+                    var reqHeaders = (sign && headers) ? headers : (init.headers || (input && input.headers) || undefined);
+                    var reqCreds = SSO ? "include" : (opts.credentials || cloned.credentials);
                     promise = originalFetch.call(
                         this,
                         new Request(cloned.url, {
                             method: cloned.method,
-                            headers: headers,
+                            headers: reqHeaders,
                             body: ["GET", "HEAD"].indexOf(cloned.method) === -1 ? cloned.body : undefined,
                             duplex: "half",
                             mode: cloned.mode,
-                            credentials: cloned.credentials,
+                            credentials: reqCreds,
                             cache: cloned.cache,
                             redirect: cloned.redirect,
                             referrer: cloned.referrer,
                             integrity: cloned.integrity,
                         }),
-                        init
+                        opts
                     );
                 }
                 return promise.then(function (response) {
@@ -89,6 +105,9 @@
     XMLHttpRequest.prototype.open = function (method, url) {
         this.__mtUrl = url;
         this.__mtShouldSign = shouldSign(String(url));
+        if (SSO) {
+            try { this.withCredentials = true; } catch (e) {}
+        }
         this.addEventListener("load", function () {
             reportAuthRejected(this.status);
         });
@@ -99,6 +118,9 @@
         if (this.__mtShouldSign && !this.getRequestHeader("P-Access-Token-Id")) {
             this.setRequestHeader("P-Access-Token-Id", window.__MT_TOKEN_ID);
             this.setRequestHeader("P-Access-Token", window.__MT_TOKEN);
+        }
+        if (SSO) {
+            try { this.withCredentials = true; } catch (e) {}
         }
         return originalSend.apply(this, arguments);
     };
@@ -111,6 +133,12 @@
     if (OriginalEventSource) {
         window.EventSource = function (url, init) {
             if (!shouldSign(String(url))) {
+                // SSO-Modus: Cookies mitsenden, sonst fehlt die
+                // Pangolin-Session beim SSE-Stream.
+                if (SSO) {
+                    init = init || {};
+                    if (!init.withCredentials) init.withCredentials = true;
+                }
                 return new OriginalEventSource(url, init);
             }
             var self = this;
